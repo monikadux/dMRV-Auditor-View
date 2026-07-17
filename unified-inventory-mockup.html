@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Envira — Unified Inventory (Summary + Log)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E5AA8;
+    --blue-dark:#174a8c;
+    --blue-tab:#1D5DA9;
+    --ink:#1f2937;
+    --ink-soft:#4b5563;
+    --ink-muted:#6b7280;
+    --line:#e5e7eb;
+    --line-soft:#eef0f3;
+    --bg:#f3f4f6;
+    --green-bg:#d7f2e2; --green-tx:#0b7a45;
+    --amber-bg:#fbe9b7; --amber-tx:#8a5a00;
+    --red-bg:#fbdbdb;   --red-tx:#d43c3c;
+    --chip-bg:#eceef1;
+    --radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'IBM Plex Sans',-apple-system,sans-serif;background:var(--blue);color:var(--ink);font-size:15px;}
+
+  .app{display:grid;grid-template-columns:300px 1fr;grid-template-rows:72px 1fr;height:100vh;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{grid-column:1/3;background:var(--blue);display:grid;grid-template-columns:300px 1fr auto;align-items:center;color:#fff;}
+  .brand{display:flex;align-items:center;gap:18px;padding-left:24px;}
+  .brand .burger{display:flex;flex-direction:column;gap:5px;cursor:pointer;}
+  .brand .burger span{width:24px;height:2.5px;background:#fff;border-radius:2px;}
+  .brand h1{font-size:21px;font-weight:700;letter-spacing:.2px;}
+  .locwrap{display:flex;justify-content:center;}
+  .loc{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:500;cursor:pointer;}
+  .loc svg{opacity:.95;}
+  .top-right{display:flex;align-items:center;gap:20px;padding-right:24px;}
+  .bell{position:relative;cursor:pointer;display:flex;}
+  .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#8fb3dd,#4a7ab5);border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{background:var(--blue);color:#fff;padding:8px 0 24px;overflow-y:auto;}
+  .nav-section{padding:10px 24px;display:flex;justify-content:space-between;align-items:center;font-size:16.5px;font-weight:600;cursor:pointer;}
+  .nav-section .chev{opacity:.85;font-size:11px;}
+  .nav-sub{padding:9px 24px 9px 40px;display:flex;align-items:center;gap:14px;font-size:15px;font-weight:450;opacity:.92;cursor:pointer;border-left:3px solid transparent;}
+  .nav-sub:hover{background:rgba(255,255,255,.07);}
+  .nav-sub.sm{padding-left:56px;font-size:14.5px;}
+  .nav-sub svg{flex:none;opacity:.9;}
+  .nav-head2{padding:10px 24px 8px 40px;font-size:15.5px;font-weight:600;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .nav-top{padding:12px 24px;display:flex;align-items:center;gap:14px;font-size:16.5px;font-weight:600;cursor:pointer;}
+  .nav-top.active{background:rgba(255,255,255,.12);}
+  .nav-top:hover{background:rgba(255,255,255,.08);}
+
+  /* ---------- Main panel ---------- */
+  .main{background:#fff;border-radius:16px 0 0 0;overflow-y:auto;display:flex;flex-direction:column;}
+
+  /* Tabs — merged: only two entry points now */
+  .tabs{display:flex;gap:8px;padding:0 4px;border-bottom:1px solid var(--line);margin:0 0 0 24px;padding-right:24px;}
+  .tab{display:flex;align-items:center;gap:9px;padding:20px 18px 15px;font-size:16px;font-weight:600;color:var(--ink-soft);cursor:pointer;border-bottom:3px solid transparent;user-select:none;}
+  .tab.active{color:var(--blue-tab);border-bottom-color:var(--blue-tab);}
+  .tab svg{flex:none;}
+  .tab .newpill{font-size:10px;font-weight:700;background:#e8f0fb;color:var(--blue-tab);border-radius:20px;padding:2px 8px;letter-spacing:.4px;}
+
+  .page{padding:22px 32px 40px;display:none;}
+  .page.active{display:block;}
+
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+  .page-title{display:flex;align-items:baseline;gap:14px;}
+  .page-title h2{font-size:24px;font-weight:700;}
+  .range{display:flex;align-items:baseline;gap:8px;font-size:20px;font-weight:700;cursor:pointer;}
+  .range .caret{font-size:11px;color:var(--ink-muted);transform:translateY(-2px);}
+  .range-dates{font-size:16px;color:var(--ink-soft);font-weight:450;}
+  .btn-primary{background:var(--blue-tab);color:#fff;border:none;font-family:inherit;font-size:15.5px;font-weight:600;padding:12px 22px;border-radius:24px;display:flex;align-items:center;gap:9px;cursor:pointer;box-shadow:0 2px 6px rgba(29,93,169,.25);}
+  .btn-primary:hover{background:var(--blue-dark);}
+
+  /* Filter bar */
+  .filterbar{background:#f7f8f9;border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:18px;margin-bottom:14px;}
+  .filters-toggle{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;}
+  .fcount{background:#e3e7ec;border-radius:6px;font-size:12.5px;padding:1px 7px;font-weight:600;}
+  .search{flex:0 1 440px;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #d6dae0;border-radius:24px;padding:10px 18px;color:var(--ink-muted);font-size:15px;}
+  .search input{border:none;outline:none;flex:1;font-family:inherit;font-size:15px;color:var(--ink);}
+  .machine-meta{margin-left:auto;font-size:15px;color:var(--ink-soft);white-space:nowrap;}
+  .machine-meta b{font-weight:600;color:var(--ink);}
+
+  /* Type filter chips — Consumable / Product / FOM / Equipment */
+  .chiprow{display:flex;align-items:center;gap:10px;margin:4px 0 16px;flex-wrap:wrap;}
+  .chip-label{font-size:13.5px;color:var(--ink-muted);font-weight:500;margin-right:2px;}
+  .chip{background:var(--chip-bg);border:1px solid transparent;border-radius:20px;padding:8px 18px;font-size:14.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;user-select:none;display:flex;align-items:center;gap:7px;font-family:inherit;}
+  .chip .n{font-size:12.5px;font-weight:600;opacity:.75;}
+  .chip:hover{background:#e2e5ea;}
+  .chip.on{background:var(--blue-tab);color:#fff;border-color:var(--blue-tab);}
+  .chip.on .n{opacity:.85;}
+  .chiprow .right{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--blue-tab);font-weight:600;font-size:15px;cursor:pointer;}
+
+  /* Stat cards */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  .stat{border-radius:12px;padding:18px 20px;border:1px solid transparent;}
+  .stat .v{font-size:26px;font-weight:700;margin-bottom:2px;}
+  .stat .l{font-size:11.5px;font-weight:600;letter-spacing:.9px;color:var(--ink-muted);text-transform:uppercase;}
+  .stat.indigo{background:#eef0fb;border-color:#dfe3f7;} .stat.indigo .v{color:#374a9e;}
+  .stat.green{background:#e9f7ef;border-color:#d8efe2;} .stat.green .v{color:#0b7a45;}
+  .stat.amber{background:#fdf3e3;border-color:#f7e7c8;} .stat.amber .v{color:#8a5a00;}
+  .stat.red{background:#fdeaec;border-color:#f8d9dd;} .stat.red .v{color:#d43c3c;}
+  .stat .sub{font-size:12.5px;color:var(--ink-muted);margin-top:4px;}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;}
+  thead th{background:#f4f5f7;text-align:left;font-size:15px;font-weight:600;color:var(--ink);padding:15px 16px;white-space:nowrap;}
+  thead th:first-child{border-radius:8px 0 0 8px;padding-left:20px;}
+  thead th:last-child{border-radius:0 8px 8px 0;}
+  tbody td{padding:19px 16px;border-bottom:1px solid var(--line-soft);vertical-align:middle;font-size:15.5px;}
+  tbody td:first-child{padding-left:20px;}
+  tbody tr:hover{background:#fafbfc;}
+  .item{display:flex;align-items:center;gap:16px;}
+  .item .ic{width:44px;height:44px;border-radius:10px;background:#f1f2f4;display:flex;align-items:center;justify-content:center;flex:none;}
+  .item .nm{font-weight:600;font-size:15.5px;margin-bottom:3px;}
+  .item .cd{font-size:13.5px;color:var(--ink-muted);}
+  .typetag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:6px;padding:3px 9px;letter-spacing:.2px;}
+  .t-consumable{background:#eef0fb;color:#374a9e;}
+  .t-product{background:#e9f4ee;color:#1a6e46;}
+  .t-fom{background:#f3ecfa;color:#7a3fa8;}
+  .t-equipment{background:#fdf0e4;color:#a05a12;}
+  .qty{font-weight:500;}
+  .qty small{color:var(--ink-muted);font-weight:450;}
+  .pill{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.5px;border-radius:18px;padding:6px 14px;white-space:nowrap;}
+  .p-in{background:var(--green-bg);color:var(--green-tx);}
+  .p-low{background:var(--amber-bg);color:var(--amber-tx);}
+  .p-dep{background:var(--red-bg);color:var(--red-tx);}
+  .p-res{background:#e8f0fb;color:var(--blue-tab);}
+  .inout{display:inline-flex;align-items:center;gap:8px;font-weight:600;}
+  .inout .tri{font-size:11px;}
+  .in .tri{color:#18a558;} .out .tri{color:#d43c3c;transform:rotate(180deg);display:inline-block;}
+  .act-btn{background:var(--blue-tab);color:#fff;border:none;font-family:inherit;font-size:14.5px;font-weight:600;padding:11px 20px;border-radius:9px;cursor:pointer;white-space:nowrap;}
+  .act-btn:hover{background:var(--blue-dark);}
+  .act-btn.ghost{background:#fff;color:var(--blue-tab);border:1.5px solid #c6d6ec;}
+  .act-btn.ghost:hover{background:#f2f7fd;}
+  .muted{color:var(--ink-muted);}
+  .dt .d{font-weight:500;} .dt .t{font-size:13.5px;color:var(--ink-muted);margin-top:2px;}
+  .kebab{color:#9aa1ab;font-size:18px;letter-spacing:2px;cursor:pointer;writing-mode:vertical-rl;line-height:1;}
+
+  .empty{padding:60px 20px;text-align:center;color:var(--ink-muted);display:none;}
+  .empty.show{display:block;}
+
+  /* annotation strip (design note) */
+  .designnote{margin:0 32px;background:#fffbe9;border:1px dashed #e3cf8a;border-radius:10px;padding:10px 16px;font-size:13.5px;color:#7a6420;display:flex;gap:10px;align-items:center;}
+  .designnote b{font-weight:600;}
+  .designnote .x{margin-left:auto;cursor:pointer;color:#b09a4e;font-weight:700;}
+
+  /* ---------- Modals ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:flex-start;justify-content:center;padding-top:9vh;z-index:50;}
+  .overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:12px;width:520px;max-width:94vw;box-shadow:0 24px 60px rgba(0,0,0,.28);padding:26px 28px 28px;animation:pop .16s ease-out;}
+  .modal.wide{width:600px;}
+  @keyframes pop{from{transform:translateY(8px);opacity:.6}to{transform:none;opacity:1}}
+  .m-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;padding-bottom:16px;border-bottom:1px solid var(--line-soft);}
+  .m-head h3{font-size:20px;font-weight:600;}
+  .m-x{cursor:pointer;color:var(--blue-tab);font-size:20px;font-weight:600;line-height:1;padding:2px 6px;}
+  .m-info{background:#eaf2fc;border-radius:8px;padding:14px 16px;display:flex;gap:12px;margin-bottom:22px;}
+  .m-info .ii{color:var(--blue-tab);flex:none;margin-top:1px;}
+  .m-info b{display:block;font-size:15px;font-weight:600;margin-bottom:2px;}
+  .m-info span{font-size:13.5px;color:var(--ink-soft);}
+  .ffield{position:relative;border:1px solid #c4c9d0;border-radius:8px;padding:0;margin-bottom:18px;}
+  .ffield>label{position:absolute;top:-8px;left:12px;background:#fff;font-size:12px;color:var(--ink-muted);padding:0 5px;font-weight:500;}
+  .ffield input,.ffield select{width:100%;border:none;outline:none;background:transparent;font-family:inherit;font-size:15.5px;color:var(--ink);padding:15px 16px;appearance:none;}
+  .ffield.select::after{content:'▾';position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none;}
+  .ffield .cal{position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;}
+  .m-foot{display:flex;gap:14px;margin-top:8px;}
+  .m-foot .btn-cancel{flex:1;background:#fff;border:1.5px solid #c4c9d0;color:var(--ink-soft);font-family:inherit;font-size:15.5px;font-weight:600;padding:13px 0;border-radius:8px;cursor:pointer;}
+  .m-foot .btn-cancel.filled{background:#e8eaee;border-color:#e8eaee;}
+  .m-foot .btn-go{flex:1.4;background:var(--blue-tab);border:none;color:#fff;font-family:inherit;font-size:15.5px;font-weight:600;padding:13px 0;border-radius:8px;cursor:pointer;}
+  .m-foot .btn-go:hover{background:var(--blue-dark);}
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;}
+  .plabel{font-size:15px;font-weight:600;margin-bottom:8px;display:block;}
+  .pfield{border:1px solid #c4c9d0;border-radius:8px;margin-bottom:18px;position:relative;}
+  .pfield input,.pfield select{width:100%;border:none;outline:none;background:transparent;font-family:inherit;font-size:15px;color:var(--ink);padding:13px 14px;appearance:none;}
+  .pfield.select::after{content:'▾';position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none;}
+  .radios{display:flex;gap:26px;margin-bottom:20px;}
+  .radios label{display:flex;align-items:center;gap:9px;font-size:15.5px;font-weight:500;cursor:pointer;}
+  .radios input{accent-color:#18a558;width:18px;height:18px;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:#cfd4da;border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ======= TOP BAR ======= -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="burger"><span></span><span></span><span></span></div>
+      <h1>Humminwhale</h1>
+    </div>
+    <div class="locwrap">
+      <div class="loc">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Envira, Antroli, Solapur
+        <span style="font-size:10px;">▼</span>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="bell">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div class="avatar">GY</div>
+    </div>
+  </div>
+
+  <!-- ======= SIDEBAR ======= -->
+  <div class="sidebar">
+    <div class="nav-section">Masterdata <span class="chev">▲</span></div>
+    <div class="nav-sub">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      Equipments
+    </div>
+    <div class="nav-section">Manufacturing <span class="chev">▲</span></div>
+    <div class="nav-head2">Deals <span class="chev">▲</span></div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 9l4-4v3h8v2H7v3L3 9z"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+      Inward Raw Material&nbsp; Deal
+    </div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 9l-4-4v3H9v2h8v3l4-4z"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg>
+      Outward Deal
+    </div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="1" y="6" width="13" height="10" rx="1"/><path d="M14 9h4l3 3v4h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+      Transport Deal
+    </div>
+    <div class="nav-head2">Deliveries <span class="chev">▲</span></div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12M6 11l6 6 6-6"/><path d="M4 21h16"/></svg>
+      Inward
+    </div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 21V9M6 13l6-6 6 6"/><path d="M4 3h16"/></svg>
+      Outward
+    </div>
+    <div class="nav-section">Settlement <span class="chev">▲</span></div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="6" width="16" height="12" rx="2"/><path d="M22 10v8a2 2 0 0 1-2 2H6"/><circle cx="10" cy="12" r="2.5"/></svg>
+      Cashflow
+    </div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+      Invoices
+    </div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Payments
+    </div>
+    <div class="nav-sub sm">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M6 4h12M6 8h12M9 8c0 5 4 6 6 12M13 8c0 4-3 6-6 12" transform="scale(.9) translate(1.5,0)"/></svg>
+      Settlement View
+    </div>
+    <div class="nav-top">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Production
+    </div>
+    <div class="nav-top active">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+      Inventory
+    </div>
+  </div>
+
+  <!-- ======= MAIN ======= -->
+  <div class="main">
+
+    <!-- Two tabs only: Summary first, then Log -->
+    <div class="tabs">
+      <div class="tab active" data-page="summary" onclick="switchTab('summary')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+        Inventory Summary
+      </div>
+      <div class="tab" data-page="log" onclick="switchTab('log')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>
+        Inventory Log
+      </div>
+    </div>
+
+    <!-- ============ PAGE 1 : INVENTORY SUMMARY ============ -->
+    <div class="page active" id="page-summary">
+      <div class="page-head">
+        <div class="page-title">
+          <h2>Inventory Summary</h2>
+          <span class="range">As of Today <span class="caret">▼</span></span>
+          <span class="range-dates">(04 Mar 2026, 11:40 AM)</span>
+        </div>
+        <button class="btn-primary" onclick="openAdd()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+          Add Inventory Item
+        </button>
+      </div>
+
+      <div class="filterbar">
+        <div class="filters-toggle"><span style="font-size:11px;">▲</span> Filters <span class="fcount">1</span></div>
+        <div class="search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1D5DA9" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input placeholder="Search inventory — item, code, equipment…">
+        </div>
+        <div class="machine-meta">Total Machine: <b>14</b> • Active <b>12</b> • Maintenance: <b>2</b></div>
+      </div>
+
+      <!-- ONE filter, not separate entry points -->
+      <div class="chiprow" id="chips-summary">
+        <span class="chip-label">Type</span>
+        <button class="chip on" data-type="all">All <span class="n">(14)</span></button>
+        <button class="chip" data-type="product">Product <span class="n">(3)</span></button>
+        <button class="chip" data-type="consumable">Consumable <span class="n">(8)</span></button>
+        <button class="chip" data-type="fom">FOM <span class="n">(2)</span></button>
+        <button class="chip" data-type="equipment">Equipment Spares <span class="n">(1)</span></button>
+      </div>
+
+      <table id="tbl-summary">
+        <thead>
+          <tr>
+            <th>Item Details</th>
+            <th>Type</th>
+            <th>Stock on Hand</th>
+            <th>Min. Level</th>
+            <th>Last Movement</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody><!-- rows injected --></tbody>
+      </table>
+      <div class="empty" id="empty-summary">No items for this filter.</div>
+    </div>
+
+    <!-- ============ PAGE 2 : INVENTORY LOG ============ -->
+    <div class="page" id="page-log">
+      <div class="page-head">
+        <div class="page-title">
+          <h2>Inventory Log</h2>
+          <span class="range">Last 7 days <span class="caret">▼</span></span>
+          <span class="range-dates">(26 Feb 2026 – 04 Mar 2026)</span>
+        </div>
+        <button class="btn-primary" onclick="openManual()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+          Manual Entry
+        </button>
+      </div>
+
+      <div class="filterbar">
+        <div class="filters-toggle"><span style="font-size:11px;">▼</span> Filters <span class="fcount">1</span></div>
+        <div class="search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1D5DA9" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input placeholder="Search log — item, deal no., equipment, note…">
+        </div>
+        <div class="machine-meta">Transactions: <b>15</b> | In: <b>26.7 MT + 11 items</b> | Out: <b>60 MT + 9 items</b></div>
+      </div>
+
+      <!-- Same single filter on the log -->
+      <div class="chiprow" id="chips-log">
+        <span class="chip-label">Type</span>
+        <button class="chip on" data-type="all">All <span class="n">(15)</span></button>
+        <button class="chip" data-type="product">Product <span class="n">(5)</span></button>
+        <button class="chip" data-type="consumable">Consumable <span class="n">(7)</span></button>
+        <button class="chip" data-type="fom">FOM <span class="n">(2)</span></button>
+        <button class="chip" data-type="equipment">Equipment Spares <span class="n">(1)</span></button>
+      </div>
+
+      <table id="tbl-log">
+        <thead>
+          <tr>
+            <th>Item Details</th>
+            <th>Type</th>
+            <th>In / Out</th>
+            <th>Quantity</th>
+            <th>Balance After</th>
+            <th>Date &amp; Time</th>
+            <th>Reference / Note</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody><!-- rows injected --></tbody>
+      </table>
+      <div class="empty" id="empty-log">No movements for this filter.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ MODAL : ISSUE STOCK ============ -->
+<div class="overlay" id="ov-issue" onclick="ovClose(event,this)">
+  <div class="modal">
+    <div class="m-head"><h3 id="iss-title">Issue Stock: Main Die — Standard</h3><span class="m-x" onclick="closeAll()">✕</span></div>
+    <div class="m-info">
+      <span class="ii"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span>
+      <div><b>Available Stock</b><span id="iss-avail">12 rolls available from batch #BN-2024-001</span></div>
+    </div>
+    <div class="ffield select"><label>Select Machine</label>
+      <select><option>Choose Machine</option><option>Briquetting M/c BRQ-01</option><option>Briquetting M/c BRQ-02</option><option>Chipper CHP-03</option><option>Hammer Mill HM-01</option><option>Dust Collector DC-01</option></select>
+    </div>
+    <div class="ffield"><label id="iss-qtylabel">Quantity</label><input placeholder="Enter quantity"></div>
+    <div class="ffield"><label>Date</label><input value="04/03/2026">
+      <span class="cal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+    </div>
+    <div class="m-foot"><button class="btn-cancel" onclick="closeAll()">Cancel</button><button class="btn-go" onclick="closeAll()">Confirm Issuance</button></div>
+  </div>
+</div>
+
+<!-- ============ MODAL : ADD INVENTORY ITEM ============ -->
+<div class="overlay" id="ov-add" onclick="ovClose(event,this)">
+  <div class="modal wide">
+    <div class="m-head"><h3>Add New Inventory Item</h3><span class="m-x" onclick="closeAll()">✕</span></div>
+    <div class="fgrid">
+      <div><span class="plabel">Item Name</span><div class="pfield"><input placeholder=""></div></div>
+      <div><span class="plabel">Item Type</span><div class="pfield select"><select><option>Select Type</option><option>Product</option><option>Consumable</option><option>FOM</option><option>Equipment Spare</option></select></div></div>
+      <div><span class="plabel">Category</span><div class="pfield select"><select><option>Select Category</option><option>Lubricant</option><option>Die &amp; Tooling</option><option>Blades</option><option>Filters</option><option>Raw Material</option><option>Finished Goods</option></select></div></div>
+      <div><span class="plabel">Unit of Measurement</span><div class="pfield select"><select><option>Pieces</option><option>Sets</option><option>Liters</option><option>Kg</option><option>MT</option><option>Bags</option><option>Rolls</option></select></div></div>
+      <div><span class="plabel">Applicable Equipment</span><div class="pfield select"><select><option>Select Equipment</option><option>Briquetting M/c BRQ-01</option><option>Briquetting M/c BRQ-02</option><option>Chipper CHP-03</option><option>Hammer Mill HM-01</option></select></div></div>
+      <div><span class="plabel">Minimum Stock Level</span><div class="pfield"><input placeholder=""></div></div>
+      <div><span class="plabel">Opening Stock Quantity</span><div class="pfield"><input placeholder=""></div></div>
+      <div><span class="plabel">Cost per Unit</span><div class="pfield"><input placeholder=""></div></div>
+      <div><span class="plabel">Warehouse</span><div class="pfield select"><select><option>Select Warehouse</option><option>Envira, Antroli, Solapur</option></select></div></div>
+      <div></div>
+    </div>
+    <div class="m-foot"><button class="btn-cancel filled" onclick="closeAll()">Cancel</button><button class="btn-go" onclick="closeAll()">Save Item</button></div>
+  </div>
+</div>
+
+<!-- ============ MODAL : MANUAL ENTRY ============ -->
+<div class="overlay" id="ov-manual" onclick="ovClose(event,this)">
+  <div class="modal">
+    <div class="m-head"><h3>Manual Inventory Entry</h3><span class="m-x" onclick="closeAll()">✕</span></div>
+    <div class="radios">
+      <label><input type="radio" name="io" checked> Stock In</label>
+      <label><input type="radio" name="io"> Stock Out</label>
+    </div>
+    <span class="plabel">Inventory Item</span>
+    <div class="pfield select" style="margin-bottom:20px;"><select id="man-item"><option>Select Item</option><option>Ram Tip (90mm)</option><option>Split Die / Main Die</option><option>Hammer Mill Beaters</option><option>Hydraulic Oil (Enklo 68)</option><option>HT Grease (High Temp)</option><option>FOM — 40 Kg Bags</option><option>Groundnut Shell (Loose)</option><option>Briquette (90mm)</option></select></div>
+    <div class="fgrid">
+      <div><span class="plabel">Quantity</span><div class="pfield"><input value="0"></div></div>
+      <div><span class="plabel">Unit</span><div class="pfield select"><select><option>Units</option><option>Sets</option><option>Liters</option><option>Kg</option><option>MT</option><option>Bags</option></select></div></div>
+      <div><span class="plabel">Entry Date</span><div class="pfield"><input value="04 Mar 2026"></div></div>
+      <div><span class="plabel">Notes</span><div class="pfield"><input placeholder="Add comments…"></div></div>
+    </div>
+    <div class="m-foot"><button class="btn-cancel filled" onclick="closeAll()">Cancel</button><button class="btn-go" onclick="closeAll()">Save Entry</button></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Data ---------------- */
+const TYPES = {
+  product:    {label:'Product',          cls:'t-product'},
+  consumable: {label:'Consumable',       cls:'t-consumable'},
+  fom:        {label:'FOM',              cls:'t-fom'},
+  equipment:  {label:'Equipment Spare',  cls:'t-equipment'},
+};
+
+/* Per-type smart actions (note 13) */
+const ACTIONS = {
+  product:    r => `<span class="muted">—</span>`, /* products move via Deals/Deliveries, not from inventory */
+  consumable: r => r.status==='dep' ? btn('Restock', true, `openManual('${esc(r.name)}')`) : btn('Issue to Equipment', false, `openIssue('${esc(r.name)}','${r.qty}','${r.code}')`),
+  fom:        r => r.status==='dep' ? btn('Restock', true, `openManual('${esc(r.name)}')`) : btn('Issue / Sell to Farmer', false, `openIssue('${esc(r.name)}','${r.qty}','${r.code}')`),
+  equipment:  r => r.status==='dep' ? btn('Restock', true, `openManual('${esc(r.name)}')`) : btn('Issue to Equipment', false, `openIssue('${esc(r.name)}','${r.qty}','${r.code}')`),
+};
+function esc(s){ return s.replace(/'/g,"\\'"); }
+function btn(t, ghost, click){ return `<button class="act-btn${ghost?' ghost':''}" onclick="${click||''}">${t}</button>`; }
+
+/* ---------------- Modals ---------------- */
+function openIssue(name, qty, code){
+  document.getElementById('iss-title').textContent = 'Issue Stock: ' + name;
+  document.getElementById('iss-avail').textContent = qty + ' available from batch ' + code;
+  const unit = (qty.split(' ')[1]||'units').toLowerCase();
+  document.getElementById('iss-qtylabel').textContent = 'Quantity (' + unit + ')';
+  document.getElementById('ov-issue').classList.add('show');
+}
+function openManual(name){
+  if(name){ const s=document.getElementById('man-item'); [...s.options].forEach(o=>{ if(o.text===name) s.value=o.text; }); }
+  document.getElementById('ov-manual').classList.add('show');
+}
+function openAdd(){ document.getElementById('ov-add').classList.add('show'); }
+function closeAll(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); }
+function ovClose(e, ov){ if(e.target===ov) closeAll(); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAll(); });
+
+const SUMMARY = [
+  {name:'Groundnut Shell (Loose)', code:'#RM-GNS-01',  type:'product',    qty:'412 MT',   min:'100 MT',  last:'IN • 03 Mar', status:'in'},
+  {name:'Briquette (90mm)',        code:'#FG-BRQ-90',  type:'product',    qty:'486 MT',   min:'50 MT',   last:'OUT • 04 Mar', status:'in'},
+  {name:'Rice Husk',               code:'#RM-RHK-02',  type:'product',    qty:'88 MT',    min:'120 MT',  last:'IN • 28 Feb', status:'low'},
+  {name:'Ram Tip (90mm)',          code:'#MEC-P-001',  type:'consumable', qty:'01 Units', min:'02 Units',last:'OUT • 02 Mar', status:'low'},
+  {name:'Shear Pin (Safety Fuse)', code:'#DIE-GEN-005',type:'consumable', qty:'08 Units', min:'04 Units',last:'OUT • 01 Mar', status:'in'},
+  {name:'Split Die / Main Die',    code:'#DIE-GEN-005',type:'consumable', qty:'0 Sets',   min:'01 Set',  last:'OUT • 27 Feb', status:'dep'},
+  {name:'Hydraulic Oil (Enklo 68)',code:'#LUB-HYD-68', type:'consumable', qty:'180 Liters',min:'60 Liters',last:'OUT • 03 Mar', status:'in'},
+  {name:'Hammer Mill Beaters',     code:'#CHP-BLD-04', type:'consumable', qty:'00 Sets',  min:'01 Set',  last:'OUT • 26 Feb', status:'dep'},
+  {name:'Chipper Blades (Hardened)',code:'#CHP-BLD-04',type:'consumable', qty:'02 Sets',  min:'01 Set',  last:'IN • 05 Jan', status:'in'},
+  {name:'HT Grease (High Temp)',   code:'#LUB-GRS-01', type:'consumable', qty:'15 Kg',    min:'05 Kg',   last:'IN • 02 Mar', status:'in'},
+  {name:'Dust Filter Bags',        code:'#FLT-BAG-20', type:'consumable', qty:'05 / 20 Units', min:'10 Units', last:'OUT • 25 Feb', status:'low'},
+  {name:'FOM — 40 Kg Bags',        code:'#FOM-BAG-40', type:'fom',        qty:'260 Bags', min:'100 Bags',last:'OUT • 03 Mar', status:'in'},
+  {name:'FOM — Bulk (Loose)',      code:'#FOM-BLK-01', type:'fom',        qty:'12.4 MT',  min:'5 MT',    last:'IN • 01 Mar', status:'in'},
+  {name:'Baler Net Roll',          code:'#EQP-NET-12', type:'equipment',  qty:'12 Rolls', min:'04 Rolls',last:'IN • 24 Feb', status:'in'},
+];
+
+const LOG = [
+  {name:'Briquette (90mm)',        code:'#FG-BRQ-90',  type:'product',    dir:'out', qty:'28 MT',    bal:'486 MT',   d:'04 Mar 2026', t:'9:12 AM',  ref:'Outward Deal #OD-1142'},
+  {name:'Hydraulic Oil (Enklo 68)',code:'#LUB-HYD-68', type:'consumable', dir:'out', qty:'20 Liters',bal:'180 Liters',d:'03 Mar 2026', t:'4:38 PM',  ref:'Issued to Briquetting M/c BRQ-02'},
+  {name:'Groundnut Shell (Loose)', code:'#RM-GNS-01',  type:'product',    dir:'in',  qty:'8.03 MT',  bal:'412 MT',   d:'03 Mar 2026', t:'6:21 PM',  ref:'Inward Delivery #488'},
+  {name:'FOM — 40 Kg Bags',        code:'#FOM-BAG-40', type:'fom',        dir:'out', qty:'40 Bags',  bal:'260 Bags', d:'03 Mar 2026', t:'11:05 AM', ref:'Sold to farmer — Rec #F-2210'},
+  {name:'HT Grease (High Temp)',   code:'#LUB-GRS-01', type:'consumable', dir:'in',  qty:'5 Kg',     bal:'15 Kg',    d:'02 Mar 2026', t:'10:30 AM', ref:'Manual entry — restock'},
+  {name:'Ram Tip (90mm)',          code:'#MEC-P-001',  type:'consumable', dir:'out', qty:'01 Unit',  bal:'01 Unit',  d:'02 Mar 2026', t:'9:47 AM',  ref:'Issued to Briquetting M/c BRQ-01'},
+  {name:'Shear Pin (Safety Fuse)', code:'#DIE-GEN-005',type:'consumable', dir:'out', qty:'02 Units', bal:'08 Units', d:'01 Mar 2026', t:'3:15 PM',  ref:'Issued to Chipper CHP-03'},
+  {name:'FOM — Bulk (Loose)',      code:'#FOM-BLK-01', type:'fom',        dir:'in',  qty:'4.2 MT',   bal:'12.4 MT',  d:'01 Mar 2026', t:'12:02 PM', ref:'Production batch #PB-77'},
+  {name:'Groundnut Shell (Loose)', code:'#RM-GNS-01',  type:'product',    dir:'in',  qty:'8.03 MT',  bal:'404 MT',   d:'28 Feb 2026', t:'6:21 PM',  ref:'Inward Delivery #486'},
+  {name:'Rice Husk',               code:'#RM-RHK-02',  type:'product',    dir:'in',  qty:'6.4 MT',   bal:'88 MT',    d:'28 Feb 2026', t:'2:44 PM',  ref:'Inward Delivery #485'},
+  {name:'Split Die / Main Die',    code:'#DIE-GEN-005',type:'consumable', dir:'out', qty:'01 Set',   bal:'0 Sets',   d:'27 Feb 2026', t:'8:20 AM',  ref:'Issued to Briquetting M/c BRQ-02'},
+  {name:'Hammer Mill Beaters',     code:'#CHP-BLD-04', type:'consumable', dir:'out', qty:'01 Set',   bal:'00 Sets',  d:'26 Feb 2026', t:'5:02 PM',  ref:'Issued to Hammer Mill HM-01'},
+  {name:'Briquette (90mm)',        code:'#FG-BRQ-90',  type:'product',    dir:'out', qty:'32 MT',    bal:'514 MT',   d:'26 Feb 2026', t:'10:15 AM', ref:'Outward Deal #OD-1139'},
+  {name:'Baler Net Roll',          code:'#EQP-NET-12', type:'equipment',  dir:'in',  qty:'06 Rolls', bal:'12 Rolls', d:'24 Feb 2026', t:'1:40 PM',  ref:'PO #PO-3301 — batch #BN-2024-001'},
+  {name:'Dust Filter Bags',        code:'#FLT-BAG-20', type:'consumable', dir:'out', qty:'03 Units', bal:'05 Units', d:'25 Feb 2026', t:'4:11 PM',  ref:'Issued to Dust Collector DC-01'},
+];
+
+/* ---------------- Render ---------------- */
+const PILLS = {in:['p-in','IN STOCK'], low:['p-low','LOW STOCK'], dep:['p-dep','DEPLETED']};
+
+const boxIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="#c3c7cd"><path d="M12 2L3 6.5v11L12 22l9-4.5v-11L12 2zm0 2.2l6.5 3.2L12 10.6 5.5 7.4 12 4.2z"/></svg>`;
+
+function itemCell(r){
+  return `<div class="item"><div class="ic">${boxIcon}</div><div><div class="nm">${r.name}</div><div class="cd">${r.code}</div></div></div>`;
+}
+function typeCell(t){ const x=TYPES[t]; return `<span class="typetag ${x.cls}">${x.label}</span>`; }
+
+function renderSummary(filter){
+  const tb=document.querySelector('#tbl-summary tbody'); tb.innerHTML='';
+  const rows=SUMMARY.filter(r=>filter==='all'||r.type===filter);
+  rows.forEach(r=>{
+    const [pc,pt]=PILLS[r.status];
+    tb.insertAdjacentHTML('beforeend',`<tr>
+      <td>${itemCell(r)}</td>
+      <td>${typeCell(r.type)}</td>
+      <td class="qty">${r.qty}</td>
+      <td class="qty muted">${r.min}</td>
+      <td class="muted">${r.last}</td>
+      <td><span class="pill ${pc}">${pt}</span></td>
+      <td>${ACTIONS[r.type](r)}</td>
+    </tr>`);
+  });
+  document.getElementById('empty-summary').classList.toggle('show',rows.length===0);
+  document.getElementById('tbl-summary').style.display=rows.length?'':'none';
+}
+
+function renderLog(filter){
+  const tb=document.querySelector('#tbl-log tbody'); tb.innerHTML='';
+  const rows=LOG.filter(r=>filter==='all'||r.type===filter);
+  rows.forEach(r=>{
+    tb.insertAdjacentHTML('beforeend',`<tr>
+      <td>${itemCell(r)}</td>
+      <td>${typeCell(r.type)}</td>
+      <td><span class="inout ${r.dir}"><span class="tri">▲</span>${r.dir.toUpperCase()}</span></td>
+      <td class="qty">${r.dir==='out'?'−':'+'} ${r.qty}</td>
+      <td class="qty">${r.bal}</td>
+      <td class="dt"><div class="d">${r.d}</div><div class="t">${r.t}</div></td>
+      <td class="muted">${r.ref}</td>
+      <td><span class="kebab">⋮</span></td>
+    </tr>`);
+  });
+  document.getElementById('empty-log').classList.toggle('show',rows.length===0);
+  document.getElementById('tbl-log').style.display=rows.length?'':'none';
+}
+
+/* ---------------- Interactions ---------------- */
+function switchTab(p){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===p));
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.toggle('active',pg.id==='page-'+p));
+}
+function wireChips(rowId, cb){
+  const row=document.getElementById(rowId);
+  row.querySelectorAll('.chip').forEach(ch=>{
+    ch.addEventListener('click',()=>{
+      row.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+      ch.classList.add('on');
+      cb(ch.dataset.type);
+    });
+  });
+}
+wireChips('chips-summary', renderSummary);
+wireChips('chips-log', renderLog);
+renderSummary('all');
+renderLog('all');
+</script>
+</body>
+</html>

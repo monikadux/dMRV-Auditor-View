@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BFC — dMRV (Aggregation)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=block" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sidebar-bg: #43a047;
+  --sidebar-w: 250px;
+  --sidebar-collapsed-w: 60px;
+  --topbar-h: 52px;
+  --font: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --green: #2e7d32;
+  --green-dark: #154d2d;
+  --green-light: #e8f5e9;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --muted: #6b7280;
+}
+body {
+  font-family: var(--font);
+  background: #eef2f6;
+  min-height: 100vh;
+  color: var(--text);
+}
+
+/* ── Material Symbols ── */
+.ms {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal; font-style: normal;
+  line-height: 1; letter-spacing: normal; text-transform: none;
+  display: inline-block; white-space: nowrap;
+  direction: ltr; -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'opsz' 20;
+}
+
+/* ── App shell ── */
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* ── Topbar ── */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--green);
+  display: flex; align-items: center;
+  padding: 0 20px 0 0;
+  flex-shrink: 0;
+  z-index: 10;
+  position: relative;
+}
+.topbar-brand {
+  width: var(--sidebar-w);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 18px;
+  flex-shrink: 0;
+  transition: width 0.25s ease;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.app.collapsed .topbar-brand { width: var(--sidebar-collapsed-w); }
+.ham-btn {
+  background: none; border: none; cursor: pointer;
+  color: #fff; display: flex; align-items: center;
+  padding: 4px; border-radius: 4px; flex-shrink: 0;
+}
+.ham-btn:hover { background: rgba(255,255,255,0.12); }
+.brand-name {
+  font-size: 16px; font-weight: 600; color: #fff;
+  overflow: hidden; white-space: nowrap;
+  transition: opacity 0.2s, width 0.25s;
+}
+.app.collapsed .brand-name { opacity: 0; width: 0; }
+
+.topbar-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+.topbar-loc {
+  color: rgba(255,255,255,0.9); font-size: 13px;
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.topbar-loc .ms { font-size: 18px; }
+
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-icon { color: rgba(255,255,255,0.85); cursor: pointer; display: flex; align-items: center; }
+.topbar-icon .ms { font-size: 22px; }
+.topbar-icon:hover { color: #fff; }
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(255,255,255,0.25); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 13px; cursor: pointer;
+  border: 1.5px solid rgba(255,255,255,0.4);
+}
+.avatar:hover { background: rgba(255,255,255,0.35); }
+.role-tag {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.4px;
+  color: #fff; background: rgba(0,0,0,0.22);
+  padding: 3px 10px; border-radius: 20px;
+  text-transform: uppercase; white-space: nowrap;
+}
+
+/* ── Body row ── */
+.body-row { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--sidebar-bg);
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: width 0.25s ease;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.12);
+  z-index: 5;
+}
+.app.collapsed .sidebar { width: var(--sidebar-collapsed-w); }
+.sidebar-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+.pinned { padding: 4px 0; }
+.pinned-div { height: 1px; background: rgba(255,255,255,0.12); margin: 2px 12px; }
+
+.l1-head {
+  height: 44px; padding: 0 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  white-space: nowrap; overflow: hidden;
+}
+.l1-head:hover { background: rgba(0,0,0,0.22); }
+.l1-head .lbl {
+  font-size: 12.5px; font-weight: 700; letter-spacing: 0.3px; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.l1-head .caret { font-size: 10px; opacity: 0.7; transition: transform 0.22s; flex-shrink: 0; color:#fff; }
+.l1.open .l1-head .caret { transform: rotate(180deg); }
+.l1-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; background: rgba(0,0,0,0.04); }
+.l1.open .l1-body { max-height: 1600px; }
+
+.app.collapsed .l1-head .lbl { display: none; }
+.app.collapsed .l1-head .caret { display: none; }
+.app.collapsed .l1-head { justify-content: center; padding: 0; }
+
+.grp-head {
+  height: 34px; padding: 0 18px 0 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+  white-space: nowrap; overflow: hidden;
+}
+.grp-head:hover { background: rgba(255,255,255,0.06); }
+.grp-head .lbl {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.8px;
+  text-transform: uppercase; color: rgba(255,255,255,0.58);
+  white-space: nowrap;
+}
+.grp-head .caret { font-size: 9px; color: rgba(255,255,255,0.45); transition: transform 0.22s; flex-shrink: 0; }
+.grp.open .grp-head .caret { transform: rotate(180deg); }
+.grp-body { max-height: 0; overflow: hidden; transition: max-height 0.28s ease; }
+.grp.open .grp-body { max-height: 800px; }
+
+.sub-grp-label {
+  padding: 10px 18px 4px 52px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.7px;
+  text-transform: uppercase; color: rgba(255,255,255,0.38);
+  white-space: nowrap; overflow: hidden;
+}
+
+.item {
+  padding: 9px 16px 9px 52px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13.5px; color: rgba(255,255,255,0.9);
+  cursor: pointer; position: relative;
+  white-space: nowrap; overflow: hidden;
+}
+.item:hover { background: rgba(255,255,255,0.08); }
+.item.active { background: rgba(255,255,255,0.16); font-weight: 500; }
+.item.active::before {
+  content: ''; position: absolute; left: 0; top: 7px; bottom: 7px;
+  width: 3px; background: #fff; border-radius: 0 3px 3px 0;
+}
+.item .ico { font-size: 19px; opacity: 0.85; width: 22px; text-align: center; flex-shrink: 0; }
+.item .t { overflow: hidden; text-overflow: ellipsis; }
+.item.home { padding: 11px 16px 11px 18px; font-size: 14px; font-weight: 500; }
+.l1-direct .item { padding-left: 38px; }
+
+.app.collapsed .item .t { display: none; }
+.app.collapsed .item { padding: 10px 0; justify-content: center; }
+.app.collapsed .item::before { display: none; }
+.app.collapsed .grp-head { display: none; }
+.app.collapsed .sub-grp-label { display: none; }
+.app.collapsed .l1-body { max-height: 1600px !important; }
+.app.collapsed .grp-body { max-height: 800px !important; }
+.app.collapsed .item.home { padding: 11px 0; }
+
+.logout-zone { flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.12); padding: 4px 0; }
+.logout-zone .item { opacity: 0.7; padding-left: 18px; }
+.logout-zone .item:hover { opacity: 1; }
+.app.collapsed .logout-zone .item { padding: 10px 0; justify-content: center; }
+
+/* Auditor sidebar: flat items */
+.aud-item { padding: 12px 16px 12px 20px; font-size: 13.5px; }
+
+/* ── Main content ── */
+.main { flex: 1; overflow-y: auto; padding: 24px; }
+
+.card-screen {
+  background: #fff; border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.content-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; border-bottom: 1px solid var(--border);
+}
+.content-header h1 { font-size: 20px; font-weight: 600; color: var(--text); display:flex; align-items:center; gap:10px; }
+
+.toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 24px; border-bottom: 1px solid var(--border);
+}
+.filter-btn {
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 6px 14px; font-size: 12.5px; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer; background: #fff; font-family: var(--font);
+  white-space: nowrap;
+}
+.filter-btn .ms { font-size: 16px; }
+.filter-count {
+  background: var(--green); color: #fff; border-radius: 50%;
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600;
+}
+.search-box {
+  flex: 1; border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 14px; font-size: 13px; color: #aaa;
+  display: flex; align-items: center; gap: 8px;
+}
+.search-box .ms { font-size: 17px; color: #bbb; }
+.total-count { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+
+.chip-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 24px; border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.chip {
+  border-radius: 20px; padding: 5px 14px;
+  font-size: 12.5px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--border); font-family: var(--font); font-weight: 500;
+  background: #fff; color: var(--muted);
+  transition: background 0.15s;
+}
+.chip .ms { font-size: 15px; }
+.chip.sel { background: var(--green); color: #fff; border-color: var(--green); }
+.chip .cnt {
+  background: rgba(0,0,0,0.08); border-radius: 10px; padding: 0 7px;
+  font-size: 11px; font-weight: 600;
+}
+.chip.sel .cnt { background: rgba(255,255,255,0.25); }
+.chip-sep { color: #d0d0d0; margin: 0 2px; font-size: 16px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 11px; font-weight: 600; color: var(--muted);
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+td {
+  padding: 12px 16px; border-bottom: 1px solid #f3f4f6;
+  font-size: 13px; color: var(--text); vertical-align: top;
+}
+tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #fafafa; }
+.party-link { color: #43a047; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.party-link:hover { text-decoration: underline; }
+.party-sub { color: #aaa; font-size: 11.5px; margin-top: 2px; }
+.deal-id { color: #aaa; font-size: 11.5px; margin-top: 4px; }
+
+/* Status pills */
+.pill {
+  font-size: 10.5px; padding: 3px 10px; border-radius: 20px; font-weight: 600;
+  white-space: nowrap; display: inline-block; letter-spacing: 0.2px;
+}
+.pill-completed { background: #e8f5e9; color: #2e7d32; }
+.pill-verified { background: #e8f5e9; color: #2e7d32; }
+.pill-pending { background: #f3f4f6; color: #6b7280; }
+.pill-clar { background: #fdf4e7; color: #b45309; }
+.pill-pass { background: #e8f5e9; color: #2e7d32; }
+.pill-flag { background: #fdecea; color: #c62828; }
+.pill-dmrv {
+  background: var(--green); color: #fff;
+  font-size: 10px; padding: 3px 10px; border-radius: 20px; font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.pill-new {
+  background: #ff8f00; color: #fff;
+  font-size: 9px; padding: 2px 6px; border-radius: 8px; font-weight: 700;
+  letter-spacing: 0.5px; margin-left: 6px; vertical-align: middle;
+}
+
+/* Totals strip */
+.totals-strip {
+  display: flex; align-items: center; gap: 26px;
+  padding: 10px 24px; background: #f7faf7;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px; color: var(--muted);
+}
+.totals-strip b { color: var(--text); font-weight: 600; }
+.totals-strip .tsep { color: #d0d0d0; }
+
+/* Back / nav bar */
+.form-nav-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 24px; border-bottom: 1px solid var(--border);
+}
+.back-btn {
+  background: none; border: none; cursor: pointer; display: flex;
+  align-items: center; gap: 6px; color: var(--muted); font-size: 13px;
+  font-family: var(--font); padding: 4px 8px; border-radius: 4px;
+}
+.back-btn:hover { background: #f3f4f6; color: var(--text); }
+.back-btn .ms { font-size: 20px; }
+.crumb { font-size: 12.5px; color: var(--muted); }
+.crumb .crumb-link { color: #43a047; cursor: pointer; }
+.crumb .crumb-link:hover { text-decoration: underline; }
+
+/* ── Delivery details ── */
+.dd-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px 12px;
+}
+.dd-title { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.party-cards {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;
+  padding: 0 24px 18px;
+}
+.pcard {
+  border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px;
+  background: #fbfdfb;
+}
+.pcard .plabel {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.7px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+}
+.pcard .plabel .ms { font-size: 15px; color: #43a047; }
+.pcard .pname { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.pcard .pname.link { color: #43a047; cursor: pointer; }
+.pcard .pname.link:hover { text-decoration: underline; }
+.pcard .psub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+/* Tabs */
+.tabs {
+  display: flex; gap: 2px; padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  padding: 10px 18px; font-size: 13px; font-weight: 500;
+  color: var(--muted); cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  display: flex; align-items: center;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
+.tab-pane { display: none; padding: 22px 24px; }
+.tab-pane.active { display: block; }
+
+/* Overview blocks */
+.ov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.ov-block {
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+}
+.ov-block-head {
+  padding: 10px 16px; background: #f7faf7; border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.ov-block-head .ms { font-size: 17px; color: #43a047; }
+.ov-block-body { padding: 14px 16px; }
+.kv { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+.kv .k { color: var(--muted); }
+.kv .v { font-weight: 500; }
+.kv .v.strong { font-weight: 700; }
+.qnote {
+  margin-top: 10px; font-size: 11.5px; color: #b45309;
+  background: #fdf4e7; border: 1px solid #f0cc90; border-radius: 6px;
+  padding: 7px 10px; display: flex; gap: 6px; align-items: flex-start;
+}
+.qnote .ms { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+.wb-img {
+  height: 190px; border-radius: 6px;
+  background: repeating-linear-gradient(45deg, #f1f5f1, #f1f5f1 12px, #e9efe9 12px, #e9efe9 24px);
+  border: 1px dashed #c6d6c6;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; color: var(--muted); font-size: 12px;
+}
+.wb-img .ms { font-size: 36px; color: #a5c2a5; }
+
+/* ── dMRV tab ── */
+.dmrv-card {
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px 18px; margin-bottom: 16px; background: #fff;
+}
+.dmrv-card-title {
+  font-size: 13px; font-weight: 600; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.dmrv-card-title .ms { font-size: 18px; color: #43a047; }
+
+/* Toggle switch */
+.toggle-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0; background: #cfd6cf; border-radius: 24px;
+  transition: 0.2s;
+}
+.slider::before {
+  content: ''; position: absolute; height: 18px; width: 18px;
+  left: 3px; top: 3px; background: #fff; border-radius: 50%;
+  transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.switch input:checked + .slider { background: var(--green); }
+.switch input:checked + .slider::before { transform: translateX(20px); }
+.helper { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+#dmrv-disclosed { display: none; }
+#dmrv-disclosed.on { display: block; }
+
+textarea.form-field {
+  width: 100%; border: 1px solid #d1d5db; border-radius: 6px;
+  padding: 10px 13px; font-size: 13px; color: var(--text);
+  background: #fff; font-family: var(--font);
+  outline: none; resize: vertical; min-height: 74px;
+}
+textarea.form-field:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(27,94,55,0.08); }
+textarea.form-field::placeholder { color: #aaa; }
+.mini-btn {
+  background: var(--green); color: #fff; border: none; border-radius: 6px;
+  padding: 7px 16px; font-size: 12.5px; font-weight: 500; cursor: pointer;
+  font-family: var(--font); display: inline-flex; align-items: center; gap: 6px;
+}
+.mini-btn:hover { background: var(--green-dark); }
+.mini-btn .ms { font-size: 16px; }
+.mini-btn.ghost {
+  background: #fff; color: var(--green); border: 1px solid #b8dfc8;
+}
+.mini-btn.ghost:hover { background: var(--green-light); }
+
+/* Photos */
+.photo-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.photo-tile {
+  width: 140px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  background: #fff;
+}
+.photo-thumb {
+  height: 92px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-thumb .ms { font-size: 30px; color: rgba(255,255,255,0.85); }
+.photo-acts {
+  position: absolute; top: 5px; right: 5px; display: flex; gap: 4px;
+}
+.ph-act {
+  width: 22px; height: 22px; border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(0,0,0,0.45); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.ph-act .ms { font-size: 13px; }
+.ph-act:hover { background: rgba(0,0,0,0.65); }
+.photo-cap { font-size: 11px; color: var(--muted); padding: 6px 8px; }
+.photo-add {
+  width: 140px; min-height: 122px; border: 1.5px dashed #b8dfc8; border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; color: var(--green); font-size: 12px; font-weight: 500; cursor: pointer;
+  background: #fbfdfb;
+}
+.photo-add:hover { background: var(--green-light); }
+.photo-add .ms { font-size: 24px; }
+
+/* ── History timeline (platform History-tab style) ── */
+.tl { margin-top: 6px; }
+.tl-row { display: grid; grid-template-columns: 155px 36px 190px 1fr; align-items: stretch; }
+.tl-date { font-size: 12px; color: var(--muted); padding: 4px 0 22px; text-align: right; }
+.tl-date .d { color: var(--text); font-weight: 500; }
+.tl-spine { position: relative; }
+.tl-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: #43a047; border: 2.5px solid #d9efdc;
+  position: absolute; left: 50%; transform: translateX(-50%); top: 6px;
+  z-index: 1;
+}
+.tl-line {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  top: 18px; bottom: -4px; width: 0;
+  border-left: 2px dotted #b8dfc8;
+}
+.tl-row:last-child .tl-line { display: none; }
+.tl-actor { font-size: 12.5px; font-weight: 600; color: var(--text); padding: 4px 12px 22px 0; }
+.tl-actor .sub { font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.tl-desc { font-size: 12.5px; color: var(--text); padding: 4px 0 22px; }
+.tl-desc .quote {
+  display: inline-block; margin-top: 4px; background: #f7faf7; border-left: 3px solid #b8dfc8;
+  padding: 5px 10px; border-radius: 0 6px 6px 0; color: var(--muted); font-style: italic;
+}
+.tl-head-row {
+  display: grid; grid-template-columns: 155px 36px 190px 1fr;
+  font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+}
+.tl-head-row .th-date { text-align: right; }
+
+/* ── Auditor table specifics ── */
+.dist-link { color: #185FA5; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.dist-link:hover { text-decoration: underline; }
+.wt-sub { font-size: 11px; color: var(--muted); margin-top: 3px; white-space: nowrap; }
+.nt { font-size: 12px !important; vertical-align: -1px; margin-left: 3px; opacity: 0.65; }
+.latest-comment {
+  font-size: 11px; color: var(--muted); margin-top: 5px; max-width: 190px;
+  font-style: italic; cursor: pointer; line-height: 1.35;
+}
+.latest-comment:hover { color: var(--green); text-decoration: underline; }
+.latest-comment .ms { font-size: 12px; vertical-align: -2px; font-style: normal; }
+
+/* Per-cell status edit icon */
+.cell-edit {
+  font-size: 14px; color: #b7bcc3; cursor: pointer;
+  vertical-align: -2px; margin-right: 5px;
+  transition: color 0.15s;
+}
+.cell-edit:hover { color: var(--green); }
+
+/* Kebab (row actions) */
+.kebab-btn {
+  background: none; border: none; cursor: pointer; color: var(--muted);
+  width: 28px; height: 28px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.kebab-btn:hover { background: #f3f4f6; color: var(--text); }
+.kebab-btn .ms { font-size: 19px; }
+.row-menu {
+  position: fixed; z-index: 220; background: #fff; display: none;
+  border: 1px solid var(--border); border-radius: 8px; min-width: 212px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.16); padding: 5px 0;
+}
+.row-menu .rm-item {
+  display: flex; align-items: center; gap: 9px; padding: 8px 14px;
+  font-size: 12.5px; color: var(--text); cursor: pointer; white-space: nowrap;
+  font-family: var(--font);
+}
+.row-menu .rm-item:hover { background: #f7faf7; }
+.row-menu .rm-item .ms { font-size: 16px; color: var(--muted); }
+.row-menu .rm-item:hover .ms { color: var(--green); }
+.row-menu .rm-div { height: 1px; background: var(--border); margin: 5px 0; }
+
+/* Popover */
+.popover {
+  position: fixed; z-index: 210; background: #fff;
+  border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+  width: 320px; padding: 16px; display: none;
+}
+.popover h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 7px; }
+.popover h4 .ms { font-size: 17px; color: #b45309; }
+.popover .pop-sub { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+.popover .pop-err { font-size: 11px; color: #c62828; margin-top: 6px; display: none; }
+.popover .pop-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.btn-cancel {
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 16px; font-size: 12.5px; color: var(--muted);
+  background: #f9fafb; cursor: pointer; font-family: var(--font); font-weight: 500;
+}
+.btn-cancel:hover { background: #f3f4f6; }
+.pop-label {
+  display: block; font-size: 10.5px; font-weight: 600; color: var(--muted);
+  margin: 11px 0 4px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.form-select {
+  width: 100%; border: 1px solid #d1d5db; border-radius: 6px;
+  padding: 8px 10px; font-size: 13px; font-family: var(--font);
+  background: #fff; color: var(--text); outline: none; cursor: pointer;
+}
+.form-select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(27,94,55,0.08); }
+
+/* ── Inline composer + entry stream (dMRV) ── */
+.composer { display: flex; align-items: center; gap: 8px; }
+.composer-input {
+  flex: 1; border: 1px solid #d1d5db; border-radius: 6px;
+  padding: 9px 13px; font-size: 13px; color: var(--text);
+  font-family: var(--font); outline: none; background: #fff;
+}
+.composer-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(27,94,55,0.08); }
+.composer-input::placeholder { color: #aaa; }
+.comp-attach {
+  position: relative; background: #fff; border: 1px solid #b8dfc8; color: var(--green);
+  border-radius: 6px; width: 37px; height: 37px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.comp-attach:hover { background: var(--green-light); }
+.comp-attach .ms { font-size: 18px; }
+.attach-badge {
+  position: absolute; top: -7px; right: -7px;
+  background: #ff8f00; color: #fff; font-size: 9px; font-weight: 700;
+  border-radius: 10px; padding: 1px 5px;
+}
+.entry-stream { margin-top: 14px; }
+.entry { border-top: 1px solid #f3f4f6; padding: 12px 2px; }
+.entry-head { display: flex; align-items: baseline; gap: 8px; font-size: 11.5px; color: var(--muted); flex-wrap: wrap; }
+.entry-head b { color: var(--text); font-size: 12.5px; }
+.entry-text { font-size: 13px; margin-top: 5px; color: var(--text); }
+.entry-photos { display: flex; gap: 10px; margin-top: 9px; flex-wrap: wrap; }
+
+/* ── Audit history side panel (drawer) ── */
+.drawer-bg {
+  position: fixed; inset: 0; background: rgba(15,30,20,0.35);
+  z-index: 350; display: none; justify-content: flex-end;
+}
+.drawer-bg.on { display: flex; }
+.drawer {
+  width: 420px; max-width: 94vw; height: 100%; background: #fff;
+  box-shadow: -12px 0 40px rgba(0,0,0,0.22);
+  display: flex; flex-direction: column;
+  animation: drawerIn 0.25s ease;
+}
+@keyframes drawerIn { from { transform: translateX(40px); opacity: 0.3; } to { transform: none; opacity: 1; } }
+.drawer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.drawer-head h3 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.drawer-head h3 .ms { font-size: 18px; color: #43a047; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 18px 20px; }
+.drawer .tl-head-row, .drawer .tl-row { grid-template-columns: 82px 24px 100px 1fr; }
+.drawer .tl-date { font-size: 11px; }
+.drawer .tl-actor { font-size: 11.5px; padding-right: 8px; word-break: break-word; }
+.drawer .tl-desc { font-size: 11.5px; }
+
+/* ── Partner 360 ── */
+.p360-head { padding: 20px 24px 16px; display: flex; gap: 18px; align-items: flex-start; }
+.p360-avatar {
+  width: 62px; height: 62px; border-radius: 50%; flex-shrink: 0;
+  background: var(--green-light); color: var(--green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700; border: 2px solid #b8dfc8;
+}
+.p360-name { font-size: 19px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.verified-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #e8f5e9; color: #2e7d32; border-radius: 20px;
+  font-size: 11px; font-weight: 600; padding: 3px 10px;
+}
+.verified-badge .ms { font-size: 14px; }
+.p360-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+.p360-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.p360-meta .ms { font-size: 16px; color: #43a047; }
+.tag-chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.tag-chip {
+  background: #f1f8f2; color: #2e7d32; border: 1px solid #b8dfc8;
+  border-radius: 20px; font-size: 11.5px; font-weight: 500; padding: 4px 12px;
+}
+.tag-chip.blue { background: #eef4fc; color: #185FA5; border-color: #b8d4f0; }
+
+.doc-card {
+  display: flex; align-items: center; gap: 14px;
+  border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px;
+  background: #fff; max-width: 440px;
+}
+.doc-ico {
+  width: 42px; height: 42px; border-radius: 8px; flex-shrink: 0;
+  background: #fdecea; color: #c62828;
+  display: flex; align-items: center; justify-content: center;
+}
+.doc-ico .ms { font-size: 22px; }
+.doc-name { font-size: 13px; font-weight: 600; }
+.doc-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.doc-open { margin-left: auto; color: #43a047; cursor: pointer; display: flex; align-items: center; }
+.doc-open .ms { font-size: 20px; }
+
+.stub-pane {
+  padding: 40px 24px; text-align: center; color: var(--muted); font-size: 13px;
+}
+.stub-pane .ms { font-size: 36px; color: #cbd5cb; display: block; margin: 0 auto 10px; }
+
+/* ── Placeholder screens (Inventory / Dispatch) ── */
+.ph-panel { padding: 70px 24px; text-align: center; }
+.ph-panel .ms { font-size: 44px; color: #cbd5cb; }
+.ph-panel h2 { font-size: 17px; font-weight: 600; margin: 12px 0 6px; }
+.ph-panel p { font-size: 13px; color: var(--muted); }
+
+/* ── Modal (Work Done) ── */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(15,30,20,0.45);
+  z-index: 300; display: none; align-items: flex-start; justify-content: center;
+  padding: 40px 20px; overflow-y: auto;
+}
+.modal-bg.on { display: flex; }
+.modal {
+  background: #fff; border-radius: 12px; width: 860px; max-width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+}
+.modal-head h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+.modal-head h3 .ms { font-size: 19px; color: #43a047; }
+.modal-x {
+  background: none; border: none; cursor: pointer; color: var(--muted);
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-x:hover { background: #f3f4f6; }
+.wd-header-row {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+  padding: 14px 22px; border-bottom: 1px solid var(--border); background: #fbfdfb;
+}
+.wd-cell .wl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.wd-cell .wv { font-size: 12.5px; font-weight: 600; margin-top: 3px; }
+.wd-cell .ws { font-size: 11px; color: var(--muted); }
+.stats-strip {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.stat {
+  padding: 12px 10px; text-align: center; border-right: 1px solid #f3f4f6;
+}
+.stat:last-child { border-right: none; }
+.stat .sv { font-size: 17px; font-weight: 700; color: var(--green); }
+.stat .sl { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+.fuel-strip {
+  display: flex; align-items: center; gap: 30px; padding: 12px 22px;
+  border-bottom: 1px solid var(--border); font-size: 12.5px;
+}
+.fuel-strip .fl { color: var(--muted); }
+.fuel-strip b { font-weight: 600; }
+.fuel-strip .ftitle { font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.fuel-strip .ftitle .ms { font-size: 17px; color: #b45309; }
+
+.map-wrap { padding: 16px 22px; }
+.map-area { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); position: relative; }
+.map-legend {
+  display: flex; gap: 18px; margin-top: 10px; font-size: 11.5px; color: var(--muted);
+  align-items: center; flex-wrap: wrap;
+}
+.lg { display: inline-flex; align-items: center; gap: 6px; }
+.lg .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.modal-footer {
+  padding: 12px 22px 18px; font-size: 12px; color: var(--muted);
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+.modal-footer .link { color: #185FA5; cursor: pointer; font-weight: 500; }
+.modal-footer .link:hover { text-decoration: underline; }
+
+/* ── Persona switcher pill ── */
+.persona-pill {
+  position: fixed; bottom: 22px; right: 22px; z-index: 400;
+  background: #1f2937; border-radius: 30px; padding: 5px;
+  display: flex; gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.persona-pill button {
+  border: none; border-radius: 24px; padding: 8px 16px;
+  font-size: 12px; font-weight: 600; font-family: var(--font);
+  cursor: pointer; background: transparent; color: rgba(255,255,255,0.65);
+  display: flex; align-items: center; gap: 6px;
+}
+.persona-pill button .ms { font-size: 15px; }
+.persona-pill button.on { background: #43a047; color: #fff; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(10px);
+  background: #1f2937; color: #fff; font-size: 12.5px;
+  padding: 10px 18px; border-radius: 8px; z-index: 500;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+  display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast .ms { font-size: 16px; color: #7ed488; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ── Topbar ── -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <button class="ham-btn" onclick="toggleSidebar()" title="Toggle menu">
+        <span class="ms" style="font-size:22px">menu</span>
+      </button>
+      <span class="brand-name">BiofuelCircle</span>
+    </div>
+    <div class="topbar-center">
+      <div class="topbar-loc">
+        <span class="ms">location_on</span>
+        Ramnagar Biomass Bank, Barabanki
+        <span class="ms" style="font-size:18px">expand_more</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="role-tag" id="role-tag" style="display:none">dMRV Auditor</span>
+      <div class="topbar-icon"><span class="ms">notifications</span></div>
+      <div class="avatar" id="avatar">G</div>
+    </div>
+  </div>
+
+  <div class="body-row">
+
+    <!-- ── Sidebar: GROUND STAFF ── -->
+    <div class="sidebar" id="sidebar-ground">
+      <div class="sidebar-scroll">
+        <div class="pinned">
+          <div class="item home"><span class="ico ms">home</span><span class="t">Home</span></div>
+        </div>
+        <div class="pinned-div"></div>
+
+        <div class="l1 l1-direct">
+          <div class="l1-head" onclick="toggleL1(this)">
+            <span class="lbl">Master Data</span><span class="caret">▼</span>
+          </div>
+          <div class="l1-body">
+            <div class="item"><span class="ico ms">person</span><span class="t">Agri-Partners</span></div>
+            <div class="item"><span class="ico ms">precision_manufacturing</span><span class="t">Equipments</span></div>
+            <div class="item"><span class="ico ms">tag</span><span class="t">Crop/Deal Ids</span></div>
+          </div>
+        </div>
+
+        <div class="l1 open">
+          <div class="l1-head" onclick="toggleL1(this)">
+            <span class="lbl">Biomass</span><span class="caret">▼</span>
+          </div>
+          <div class="l1-body">
+            <div class="grp">
+              <div class="grp-head"><span class="lbl">Deals</span><span class="caret">▼</span></div>
+              <div class="grp-body">
+                <div class="sub-grp-label">Service Deals</div>
+                <div class="item"><span class="ico ms">handshake</span><span class="t">Aggregation</span></div>
+                <div class="item"><span class="ico ms">groups</span><span class="t">Labour</span></div>
+                <div class="item"><span class="ico ms">local_shipping</span><span class="t">Transport</span></div>
+                <div class="item"><span class="ico ms">build</span><span class="t">Equipment Rental</span></div>
+                <div class="sub-grp-label" style="margin-top:4px">Product Deals</div>
+                <div class="item"><span class="ico ms">swap_horiz</span><span class="t">Walk-in / Pick-up</span></div>
+                <div class="item"><span class="ico ms">sync_alt</span><span class="t">Inward / Outward</span></div>
+              </div>
+            </div>
+            <div class="grp">
+              <div class="grp-head"><span class="lbl">Operations</span><span class="caret">▼</span></div>
+              <div class="grp-body">
+                <div class="item"><span class="ico ms">dashboard</span><span class="t">Aggregation Plan</span></div>
+                <div class="item"><span class="ico ms">calendar_month</span><span class="t">Scheduling</span></div>
+                <div class="item"><span class="ico ms">folder</span><span class="t">Ledger</span></div>
+                <div class="item"><span class="ico ms">local_gas_station</span><span class="t">Fuel</span></div>
+                <div class="item"><span class="ico ms">device_thermostat</span><span class="t">Record Moisture/Temp</span></div>
+              </div>
+            </div>
+            <div class="grp open">
+              <div class="grp-head"><span class="lbl">Deliveries</span><span class="caret">▼</span></div>
+              <div class="grp-body">
+                <div class="item"><span class="ico ms">event</span><span class="t">Delivery Planning</span></div>
+                <div class="item active" id="nav-ground-inward" onclick="setActive(this); go('scr-delivery', false)"><span class="ico ms">south</span><span class="t">Inward</span></div>
+                <div class="item"><span class="ico ms">north</span><span class="t">Outward</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="l1 l1-direct">
+          <div class="l1-head" onclick="toggleL1(this)">
+            <span class="lbl">FOM</span><span class="caret">▼</span>
+          </div>
+          <div class="l1-body">
+            <div class="item"><span class="ico ms">local_shipping</span><span class="t">Deliveries</span></div>
+            <div class="item"><span class="ico ms">trending_up</span><span class="t">Prospects</span></div>
+          </div>
+        </div>
+
+        <div class="l1 l1-direct">
+          <div class="l1-head" onclick="toggleL1(this)">
+            <span class="lbl">Settlement</span><span class="caret">▼</span>
+          </div>
+          <div class="l1-body">
+            <div class="item"><span class="ico ms">payments</span><span class="t">Cashflow</span></div>
+            <div class="item"><span class="ico ms">receipt_long</span><span class="t">Invoices</span></div>
+            <div class="item"><span class="ico ms">credit_card</span><span class="t">Payments</span></div>
+            <div class="item"><span class="ico ms">account_balance</span><span class="t">Settlement View</span></div>
+          </div>
+        </div>
+
+        <div class="l1 l1-direct">
+          <div class="l1-head" onclick="toggleL1(this)">
+            <span class="lbl">Inventory</span><span class="caret">▼</span>
+          </div>
+          <div class="l1-body">
+            <div class="item"><span class="ico ms">inventory_2</span><span class="t">Stock</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="logout-zone">
+        <div class="item"><span class="ico ms">logout</span><span class="t">Logout</span></div>
+      </div>
+    </div>
+
+    <!-- ── Sidebar: AUDITOR ── -->
+    <div class="sidebar" id="sidebar-auditor" style="display:none">
+      <div class="sidebar-scroll">
+        <div class="pinned" style="padding-top:8px">
+          <div class="item aud-item active" id="nav-aud-inward" onclick="setAudActive(this); go('scr-auditor', false)">
+            <span class="ico ms">south</span><span class="t">Inward</span>
+          </div>
+          <div class="item aud-item" id="nav-aud-inventory" onclick="setAudActive(this); go('scr-inventory', false)">
+            <span class="ico ms">inventory_2</span><span class="t">Inventory</span>
+          </div>
+          <div class="item aud-item" id="nav-aud-dispatch" onclick="setAudActive(this); go('scr-dispatch', false)">
+            <span class="ico ms">north</span><span class="t">Dispatch</span>
+          </div>
+        </div>
+      </div>
+      <div class="logout-zone">
+        <div class="item"><span class="ico ms">logout</span><span class="t">Logout</span></div>
+      </div>
+    </div>
+
+    <!-- ── Main ── -->
+    <div class="main">
+
+      <!-- ════════ SCREEN A : Delivery Details ════════ -->
+      <div class="card-screen scr" id="scr-delivery">
+        <div class="form-nav-bar" id="dd-back-bar" style="display:none">
+          <button class="back-btn" onclick="goBack()">
+            <span class="ms">arrow_back</span> Back to dMRV Inward
+          </button>
+        </div>
+        <div class="dd-head">
+          <div class="dd-title">
+            DELIVERY : 2587
+            <span class="pill pill-completed">COMPLETED</span>
+            <span class="pill pill-dmrv" id="dd-dmrv-tag">dMRV</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">WB Receipt : 2829 &nbsp;·&nbsp; 5 Oct 2025</div>
+        </div>
+
+        <div class="party-cards">
+          <div class="pcard">
+            <div class="plabel"><span class="ms">storefront</span> Buyer</div>
+            <div class="pname">BFC Supply Private Limited</div>
+            <div class="psub">Ramnagar, UP</div>
+          </div>
+          <div class="pcard">
+            <div class="plabel"><span class="ms">agriculture</span> Seller</div>
+            <div class="pname link" onclick="go('scr-partner')">Mahfooj Ali</div>
+            <div class="psub">8850979147 &nbsp;·&nbsp; Pickup Deal (50)</div>
+          </div>
+          <div class="pcard">
+            <div class="plabel"><span class="ms">handshake</span> Aggregator</div>
+            <div class="pname link" onclick="go('scr-partner')">Istekhar</div>
+            <div class="psub">Aggregation Deal (58)</div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" data-tab="ov" onclick="setDDTab(this,'ov')">Overview</div>
+          <div class="tab" data-tab="cf" onclick="setDDTab(this,'cf')">Cashflow</div>
+          <div class="tab" data-tab="inv" onclick="setDDTab(this,'inv')">Invoices</div>
+          <div class="tab" data-tab="dmrv" onclick="setDDTab(this,'dmrv')">dMRV<span class="pill-new">NEW</span></div>
+        </div>
+
+        <!-- Overview tab -->
+        <div class="tab-pane active" id="pane-ov">
+          <table style="border:1px solid var(--border); border-radius:8px">
+            <thead>
+              <tr>
+                <th>WB Receipt</th><th>Date</th><th>Net Weight</th><th>Vehicle</th><th>Driver</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="party-link">2829</span></td>
+                <td>5 Oct 2025</td>
+                <td><b>6.38 MT</b></td>
+                <td>Tractor 05211</td>
+                <td>Arjun Kumar</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="ov-grid">
+            <div class="ov-block">
+              <div class="ov-block-head"><span class="ms">scale</span> Quantity</div>
+              <div class="ov-block-body">
+                <div class="kv"><span class="k">Gross Weight</span><span class="v">11.02 MT</span></div>
+                <div class="kv"><span class="k">Tare Weight</span><span class="v">4.64 MT</span></div>
+                <div class="kv"><span class="k">Net Weight</span><span class="v strong">6.38 MT</span></div>
+                <div class="kv"><span class="k">Bales</span><span class="v">14</span></div>
+              </div>
+            </div>
+            <div class="ov-block">
+              <div class="ov-block-head"><span class="ms">water_drop</span> Quality</div>
+              <div class="ov-block-body">
+                <div class="kv"><span class="k">Moisture</span><span class="v strong">59%</span></div>
+                <div class="kv"><span class="k">Quality Adjustment</span><span class="v" style="color:#c62828">−39%</span></div>
+                <div class="qnote"><span class="ms">warning</span> Moisture above threshold (20%) — quality adjustment of −39% applied on payable quantity as per deal terms.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ov-block" style="margin-top:16px">
+            <div class="ov-block-head"><span class="ms">receipt_long</span> Weighbridge Receipt</div>
+            <div class="ov-block-body">
+              <div class="wb-img">
+                <span class="ms">image</span>
+                Weighbridge receipt — WB-2829.jpg
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cashflow / Invoices stubs -->
+        <div class="tab-pane" id="pane-cf">
+          <div class="stub-pane"><span class="ms">payments</span>Cashflow entries for this delivery appear here (existing platform screen).</div>
+        </div>
+        <div class="tab-pane" id="pane-inv">
+          <div class="stub-pane"><span class="ms">receipt_long</span>Invoices linked to this delivery appear here (existing platform screen).</div>
+        </div>
+
+        <!-- ── dMRV tab ── -->
+        <div class="tab-pane" id="pane-dmrv">
+
+          <!-- 1. Category K toggle -->
+          <div class="dmrv-card">
+            <div class="toggle-row">
+              <div>
+                <div class="dmrv-card-title"><span class="ms">eco</span> Category K — Agricultural residues (Puro)</div>
+                <div class="helper">Marking Category K tags this delivery for the carbon project (dMRV).</div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="catk-toggle" checked onchange="toggleCatK(this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div id="dmrv-disclosed" class="on">
+
+            <!-- 2. Remarks & evidence — inline composer -->
+            <div class="dmrv-card">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:4px">
+                <div class="dmrv-card-title"><span class="ms">edit_note</span> dMRV Remarks &amp; Evidence</div>
+                <button class="mini-btn ghost" onclick="openAuditPanel()"><span class="ms">history</span> View audit history</button>
+              </div>
+              <div class="helper" style="margin-bottom:12px">Mixing, contamination, observations, photos at intake — every post is saved to the audit history.</div>
+              <div class="composer">
+                <input type="text" class="composer-input" id="dmrv-input" placeholder="Add a dMRV remark…" onkeydown="if(event.key==='Enter') postEntry()">
+                <button class="comp-attach" title="Attach photo" onclick="attachPhoto()">
+                  <span class="ms">add_a_photo</span>
+                  <span class="attach-badge" id="attach-badge" style="display:none">1</span>
+                </button>
+                <button class="mini-btn" onclick="postEntry()"><span class="ms">send</span> Post</button>
+              </div>
+              <div class="entry-stream" id="entry-stream"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ SCREEN B : Auditor Inward table ════════ -->
+      <div class="card-screen scr" id="scr-auditor" style="display:none">
+        <div class="content-header">
+          <h1>dMRV Inward — Ramnagar Biomass Bank</h1>
+          <div style="font-size:12px;color:var(--muted)">Only Category K (carbon project) deliveries</div>
+        </div>
+
+        <div class="toolbar">
+          <button class="filter-btn"><span class="ms">calendar_month</span> 01 Oct 2025 – 15 Oct 2025 <span class="ms" style="font-size:15px">expand_more</span></button>
+          <button class="filter-btn"><span class="ms">handshake</span> Aggregator: All <span class="ms" style="font-size:15px">expand_more</span></button>
+          <div style="flex:1"></div>
+          <div class="total-count" id="aud-count">dMRV Deliveries: 8</div>
+        </div>
+
+        <div class="chip-row" id="review-chips">
+          <button class="chip sel" data-f="all" onclick="setReviewChip(this)">All <span class="cnt" id="cnt-all">8</span></button>
+          <button class="chip" data-f="Pending" onclick="setReviewChip(this)">Pending <span class="cnt" id="cnt-pending">4</span></button>
+          <button class="chip" data-f="Needs Clarification" onclick="setReviewChip(this)">Needs Clarification <span class="cnt" id="cnt-clar">1</span></button>
+          <button class="chip" data-f="Verified" onclick="setReviewChip(this)">Verified <span class="cnt" id="cnt-verified">3</span></button>
+        </div>
+
+        <div class="totals-strip">
+          <span>dMRV deliveries: <b id="tot-del">8</b></span><span class="tsep">|</span>
+          <span>Quantity: <b id="tot-qty">41.2 MT</b></span><span class="tsep">|</span>
+          <span>Dry mass: <b>30.7 MT</b></span><span class="tsep">|</span>
+          <span>Product: <b>Rice Straw</b></span>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Delivery / WB</th>
+              <th>Date</th>
+              <th>Aggregator</th>
+              <th>Farmer · Village</th>
+              <th>Net Wt (MT) · Moisture</th>
+              <th>Transport</th>
+              <th>Core Check</th>
+              <th>Compliance</th>
+              <th>Review Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="aud-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ════════ Auditor placeholders ════════ -->
+      <div class="card-screen scr" id="scr-inventory" style="display:none">
+        <div class="content-header">
+          <h1>dMRV Inventory — Ramnagar Biomass Bank</h1>
+          <div style="font-size:12px;color:var(--muted)">Cat-K stock records — lightweight view</div>
+        </div>
+        <div class="tabs">
+          <div class="tab active" onclick="setInvTab(this,'inv-sum')">Inventory Summary</div>
+          <div class="tab" onclick="setInvTab(this,'inv-log')">Inventory Log</div>
+        </div>
+        <div class="tab-pane active" id="pane-inv-sum">
+          <div style="margin-bottom:12px">
+            <button class="filter-btn"><span class="ms">category</span> Product / Consumable: All <span class="ms" style="font-size:15px">expand_more</span></button>
+          </div>
+          <table style="border:1px solid var(--border); border-radius:8px">
+            <thead>
+              <tr><th>Product / Consumable</th><th>Category</th><th>Opening (MT)</th><th>Inward (MT)</th><th>Outward (MT)</th><th>Closing (MT)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><b>Rice Straw — Cat-K</b></td><td>Biomass</td><td>112.40</td><td>41.20</td><td>0.00</td><td><b>153.60</b></td></tr>
+              <tr><td><b>Rice Straw — non Cat-K</b></td><td>Biomass</td><td>64.10</td><td>12.85</td><td>8.20</td><td><b>68.75</b></td></tr>
+              <tr><td><b>Baling twine</b></td><td>Consumable</td><td>0.42</td><td>0.10</td><td>0.06</td><td><b>0.46</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tab-pane" id="pane-inv-log">
+          <div style="margin-bottom:12px">
+            <button class="filter-btn"><span class="ms">category</span> Product / Consumable: All <span class="ms" style="font-size:15px">expand_more</span></button>
+          </div>
+          <table style="border:1px solid var(--border); border-radius:8px">
+            <thead>
+              <tr><th>Date</th><th>Ref</th><th>Product / Consumable</th><th>Movement</th><th>Qty (MT)</th><th>Balance (MT)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>11 Oct 2025</td><td><span class="party-link">DEL 2627</span></td><td>Rice Straw — Cat-K</td><td><span class="pill pill-pass">INWARD</span></td><td>4.68</td><td>153.60</td></tr>
+              <tr><td>10 Oct 2025</td><td><span class="party-link">DEL 2621</span></td><td>Rice Straw — Cat-K</td><td><span class="pill pill-pass">INWARD</span></td><td>4.63</td><td>148.92</td></tr>
+              <tr><td>09 Oct 2025</td><td><span class="party-link">DEL 2614</span></td><td>Rice Straw — Cat-K</td><td><span class="pill pill-pass">INWARD</span></td><td>5.11</td><td>144.29</td></tr>
+              <tr><td>08 Oct 2025</td><td><span class="party-link">ADJ 114</span></td><td>Baling twine</td><td><span class="pill pill-pending">ISSUE</span></td><td>0.02</td><td>0.46</td></tr>
+              <tr><td>08 Oct 2025</td><td><span class="party-link">DEL 2610</span></td><td>Rice Straw — Cat-K</td><td><span class="pill pill-pass">INWARD</span></td><td>4.42</td><td>139.18</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-screen scr" id="scr-dispatch" style="display:none">
+        <div class="content-header"><h1>dMRV Dispatch — Ramnagar Biomass Bank</h1></div>
+        <div class="ph-panel">
+          <span class="ms">north</span>
+          <h2>Coming soon</h2>
+          <p>Outward from Biomass Bank is not in current scope — current capture is inward biomass only.</p>
+        </div>
+      </div>
+
+      <!-- ════════ SCREEN C : Agri-Partner 360 ════════ -->
+      <div class="card-screen scr" id="scr-partner" style="display:none">
+        <div class="form-nav-bar">
+          <button class="back-btn" onclick="goBack()"><span class="ms">arrow_back</span></button>
+          <div class="crumb"><span class="crumb-link">Agri-Partners</span> &nbsp;›&nbsp; Istekhar</div>
+        </div>
+
+        <div class="p360-head">
+          <div class="p360-avatar">I</div>
+          <div>
+            <div class="p360-name">
+              Istekhar
+              <span class="verified-badge"><span class="ms">verified</span> Verified</span>
+              <span class="tag-chip blue" style="font-size:10.5px">Aggregator</span>
+            </div>
+            <div class="p360-meta">
+              <span><span class="ms">call</span> 7897409113</span>
+              <span><span class="ms">location_on</span> Tindola, Ramnagar &nbsp;·&nbsp; 3.2 km to Bank</span>
+              <span><span class="ms">agriculture</span> Rice &nbsp;·&nbsp; 12 acres</span>
+            </div>
+            <div class="tag-chips">
+              <span class="tag-chip">Sell Biomass</span>
+              <span class="tag-chip">Buy FOM</span>
+              <span class="tag-chip">Aggregation Services</span>
+              <span class="tag-chip">Equipment Operator</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Media & Documents -->
+        <div style="padding: 4px 24px 20px">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+            <div style="font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px">
+              <span class="ms" style="font-size:18px; color:#43a047">folder_open</span> Media &amp; Documents
+            </div>
+            <button class="mini-btn ghost" onclick="toast('Upload dialog (mockup)')"><span class="ms">upload</span> Upload</button>
+          </div>
+          <div style="display:flex; gap:14px; flex-wrap:wrap">
+            <div class="doc-card" style="flex:1; min-width:340px">
+              <div class="doc-ico"><span class="ms">picture_as_pdf</span></div>
+              <div>
+                <div class="doc-name">Aggregator Declaration (PDF)</div>
+                <div class="doc-sub">Uploaded 28 Sep 2025 · girish@biofuelcircle.com · 1.2 MB</div>
+              </div>
+              <div class="doc-open" onclick="toast('Opening Aggregator_Declaration_Istekhar.pdf')"><span class="ms">open_in_new</span></div>
+            </div>
+            <div class="doc-card" style="flex:1; min-width:340px">
+              <div class="doc-ico" style="background:#eef4fc; color:#185FA5"><span class="ms">badge</span></div>
+              <div>
+                <div class="doc-name">KYC — Aadhaar</div>
+                <div class="doc-sub">Uploaded 14 Aug 2025 · Verified</div>
+              </div>
+              <div class="doc-open"><span class="ms">open_in_new</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" onclick="setPTab(this,'p-act')">Activity</div>
+          <div class="tab" onclick="setPTab(this,'p-prof')">Profile Details</div>
+          <div class="tab" onclick="setPTab(this,'p-gis')">Farm &amp; GIS</div>
+          <div class="tab" onclick="setPTab(this,'p-led')">Ledger</div>
+          <div class="tab" onclick="setPTab(this,'p-hist')">History</div>
+        </div>
+
+        <div class="tab-pane active" id="pane-p-act">
+          <div class="tl-head-row">
+            <div class="th-date">Date &amp; Time</div><div></div><div>Actor</div><div>Description</div>
+          </div>
+          <div class="tl">
+            <div class="tl-row">
+              <div class="tl-date"><span class="d">11 Oct 2025</span><br>09:20</div>
+              <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+              <div class="tl-actor">Istekhar</div>
+              <div class="tl-desc">Delivery 2627 completed — 4.68 MT rice straw from Noor Mohammad (Tindola).</div>
+            </div>
+            <div class="tl-row">
+              <div class="tl-date"><span class="d">09 Oct 2025</span><br>15:41</div>
+              <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+              <div class="tl-actor">Istekhar</div>
+              <div class="tl-desc">Delivery 2614 completed — 5.11 MT rice straw from Mahfooj Ali (Ramnagar).</div>
+            </div>
+            <div class="tl-row">
+              <div class="tl-date"><span class="d">05 Oct 2025</span><br>16:02</div>
+              <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+              <div class="tl-actor">WH Manager<div class="sub">Ramnagar BMB</div></div>
+              <div class="tl-desc">Equipment checked in — Tractor 17269 + Raker 01283 (Ledger ID 87010).</div>
+            </div>
+            <div class="tl-row">
+              <div class="tl-date"><span class="d">28 Sep 2025</span><br>11:15</div>
+              <div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>
+              <div class="tl-actor">girish@biofuelcircle.com</div>
+              <div class="tl-desc">Aggregator Declaration (PDF) uploaded to Media &amp; Documents.</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane" id="pane-p-prof"><div class="stub-pane"><span class="ms">person</span>Profile details (existing Partner 360 screen).</div></div>
+        <div class="tab-pane" id="pane-p-gis"><div class="stub-pane"><span class="ms">map</span>Farm boundaries &amp; GIS layers (existing Partner 360 screen).</div></div>
+        <div class="tab-pane" id="pane-p-led"><div class="stub-pane"><span class="ms">folder</span>Ledger entries (existing Partner 360 screen).</div></div>
+        <div class="tab-pane" id="pane-p-hist"><div class="stub-pane"><span class="ms">history</span>Full history timeline (existing Partner 360 screen).</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════ SCREEN D : Work Done / Transport distance modal ════════ -->
+<div class="modal-bg" id="wd-modal" onclick="if(event.target===this) closeWD()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3><span class="ms">route</span> Work Done — 5 Oct 2025 · Transport distance <span id="wd-km" style="color:var(--green)">3.2 km</span></h3>
+      <button class="modal-x" onclick="closeWD()"><span class="ms">close</span></button>
+    </div>
+
+    <div class="wd-header-row">
+      <div class="wd-cell"><div class="wl">Aggregator</div><div class="wv">Istekhar</div><div class="ws">7897409113</div></div>
+      <div class="wd-cell"><div class="wl">Tractor</div><div class="wv">17269</div><div class="ws">Swaraj 744</div></div>
+      <div class="wd-cell"><div class="wl">Raker</div><div class="wv">01283</div><div class="ws">Attached</div></div>
+      <div class="wd-cell"><div class="wl">Driver</div><div class="wv">Arjun Kumar</div><div class="ws">Licensed</div></div>
+      <div class="wd-cell"><div class="wl">Tracker</div><div class="wv">TRK-4471</div><div class="ws">GPS active</div></div>
+      <div class="wd-cell"><div class="wl">Check-out / Check-in</div><div class="wv">08:40 → 15:10</div><div class="ws">5 Oct 2025</div></div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat"><div class="sv">6.5</div><div class="sl">Total hours</div></div>
+      <div class="stat"><div class="sv">5.2</div><div class="sl">Working hours</div></div>
+      <div class="stat"><div class="sv">4.8</div><div class="sl">Acreage</div></div>
+      <div class="stat"><div class="sv">14</div><div class="sl">Bales</div></div>
+      <div class="stat"><div class="sv">3</div><div class="sl">Patches</div></div>
+      <div class="stat"><div class="sv">6.38</div><div class="sl">MT</div></div>
+    </div>
+
+    <div class="fuel-strip">
+      <span class="ftitle"><span class="ms">local_gas_station</span> Fuel Summary</span>
+      <span class="fl">Provided: <b>18.0 L</b></span>
+      <span class="fl">Utilized: <b>14.6 L</b></span>
+      <span class="fl">Distance travelled: <b id="wd-km2">3.2 km</b></span>
+    </div>
+
+    <div style="margin:12px 22px 0; font-size:11.5px; color:var(--muted); background:#f7faf7; border:1px solid var(--border); border-radius:6px; padding:7px 10px; display:flex; gap:7px; align-items:flex-start">
+      <span class="ms" style="font-size:15px; color:#43a047; flex-shrink:0; margin-top:1px">info</span>
+      <span>Checkout activity shown for this date &amp; aggregator — checkout-to-delivery mapping is approximate, not 1:1.</span>
+    </div>
+
+    <div class="map-wrap">
+      <div class="map-area">
+        <svg viewBox="0 0 800 340" width="100%" style="display:block" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="terrain">
+              <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="4" seed="7" result="n"/>
+              <feColorMatrix in="n" type="matrix"
+                values="0 0 0 0 0.16  0 0 0 0 0.30  0 0 0 0 0.13  0 0 0 0 1"/>
+              <feComposite operator="in" in2="SourceGraphic"/>
+            </filter>
+            <filter id="terrain2">
+              <feTurbulence type="fractalNoise" baseFrequency="0.05 0.07" numOctaves="3" seed="21" result="n"/>
+              <feColorMatrix in="n" type="matrix"
+                values="0 0 0 0 0.36  0 0 0 0 0.27  0 0 0 0 0.14  0 0 0 0 0.55"/>
+              <feComposite operator="in" in2="SourceGraphic"/>
+            </filter>
+          </defs>
+          <!-- satellite-look base -->
+          <rect width="800" height="340" fill="#2d4a22"/>
+          <rect width="800" height="340" filter="url(#terrain)"/>
+          <rect width="800" height="340" filter="url(#terrain2)"/>
+          <!-- field parcels -->
+          <g opacity="0.35" stroke="#d9d2b0" stroke-width="0.7" fill="none">
+            <rect x="60" y="40" width="130" height="80"/><rect x="200" y="40" width="110" height="80"/>
+            <rect x="60" y="130" width="130" height="90"/><rect x="470" y="180" width="140" height="100"/>
+            <rect x="620" y="60" width="120" height="90"/><rect x="330" y="230" width="120" height="80"/>
+          </g>
+          <!-- dirt road -->
+          <path d="M 180 300 C 300 260, 420 250, 520 180 S 640 110, 690 96" stroke="#c9b87e" stroke-width="6" fill="none" opacity="0.55" stroke-linecap="round"/>
+          <!-- 5 km radius -->
+          <circle cx="620" cy="120" r="150" fill="#a5d6a7" fill-opacity="0.14" stroke="#a5d6a7" stroke-width="1.6" stroke-dasharray="7 5"/>
+          <text x="620" y="258" fill="#c8e6c9" font-size="11" font-family="IBM Plex Sans" text-anchor="middle">5 km radius</text>
+          <!-- patches covered -->
+          <g fill="#4fa8e0" fill-opacity="0.55" stroke="#8fd0ff" stroke-width="1">
+            <polygon points="250,180 320,170 330,225 260,235"/>
+            <polygon points="345,150 405,145 412,196 352,202"/>
+            <polygon points="300,245 360,240 365,285 305,290"/>
+          </g>
+          <!-- movement trail -->
+          <path d="M 620 120 C 540 150, 470 160, 400 175 S 300 200, 285 205" stroke="#ffd54f" stroke-width="2" fill="none" stroke-dasharray="5 4" opacity="0.9"/>
+          <!-- farmer pin (green) -->
+          <g transform="translate(285,205)">
+            <circle r="6" fill="#43a047" stroke="#fff" stroke-width="2"/>
+            <text x="12" y="4" fill="#e8f5e9" font-size="11.5" font-family="IBM Plex Sans" font-weight="600">Mahfooj Ali — farm</text>
+          </g>
+          <!-- bank pin (yellow) -->
+          <g transform="translate(620,120)">
+            <path d="M0,-20 C 9,-20 14,-13 14,-6 C 14,3 0,14 0,14 C 0,14 -14,3 -14,-6 C -14,-13 -9,-20 0,-20 Z" fill="#ffca28" stroke="#7a5c00" stroke-width="1"/>
+            <circle cy="-7" r="4" fill="#7a5c00"/>
+            <text x="20" y="-4" fill="#fff59d" font-size="12" font-family="IBM Plex Sans" font-weight="700">Ramnagar Biomass Bank</text>
+          </g>
+        </svg>
+      </div>
+      <div class="map-legend">
+        <span class="lg"><span class="sw" style="background:#ffca28"></span> Biomass Bank</span>
+        <span class="lg"><span class="sw" style="background:#43a047"></span> Farmer location</span>
+        <span class="lg"><span class="sw" style="background:#a5d6a7"></span> 5 km sourcing radius</span>
+        <span class="lg"><span class="sw" style="background:#4fa8e0"></span> Patches covered (slashing / baling)</span>
+        <span class="lg"><span class="sw" style="background:#ffd54f"></span> Movement trail</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <span><span class="link" onclick="toast('Opening checkout details (Ledger ID 87010)')">View checkout details</span> — Equipment: Tractor 17269 + Raker 01283 · Ledger ID 87010</span>
+      <span>Tracker last ping: 5 Oct 2025, 16:42 IST</span>
+    </div>
+  </div>
+</div>
+
+<!-- Status edit popover (single structured action, status type pre-selected) -->
+<div class="popover" id="rev-pop">
+  <h4><span class="ms" style="color:#43a047">rate_review</span> <span id="rev-title">Review — Delivery —</span></h4>
+  <div class="pop-sub">Every status change requires a comment — saved to the delivery's audit history.</div>
+  <div id="rev-field-wrap" style="display:none">
+    <label class="pop-label" for="rev-field">Status of</label>
+    <select class="form-select" id="rev-field">
+      <option value="core">Core check</option>
+      <option value="comp">Compliance check</option>
+      <option value="review" selected>Review status</option>
+    </select>
+  </div>
+  <label class="pop-label" for="rev-value">Set to</label>
+  <select class="form-select" id="rev-value">
+    <option>Pass</option>
+    <option>Needs Clarification</option>
+    <option>Verified</option>
+  </select>
+  <label class="pop-label" for="rev-comment">Comment <span style="color:#c62828">*</span></label>
+  <textarea class="form-field" id="rev-comment" style="min-height:60px" placeholder="e.g. 59% moisture — please verify"></textarea>
+  <div class="pop-err" id="rev-err">A comment is required.</div>
+  <div class="pop-actions">
+    <button class="btn-cancel" onclick="closeReview()">Cancel</button>
+    <button class="mini-btn" onclick="saveReview()"><span class="ms">save</span> Save</button>
+  </div>
+</div>
+
+<!-- Audit history side panel -->
+<div class="drawer-bg" id="audit-drawer" onclick="if(event.target===this) closeAuditPanel()">
+  <div class="drawer">
+    <div class="drawer-head">
+      <h3><span class="ms">history</span> Audit History — Delivery <span id="drawer-del-id">2587</span></h3>
+      <button class="modal-x" onclick="closeAuditPanel()"><span class="ms">close</span></button>
+    </div>
+    <div class="drawer-body">
+      <div class="tl-head-row">
+        <div class="th-date">Date &amp; Time</div><div></div><div>Actor</div><div>Description</div>
+      </div>
+      <div class="tl" id="audit-tl"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Row actions kebab menu (shared, one open at a time) -->
+<div class="row-menu" id="row-menu">
+  <div class="rm-item" onclick="menuEdit('core')"><span class="ms">edit</span> Edit core check</div>
+  <div class="rm-item" onclick="menuEdit('comp')"><span class="ms">edit</span> Edit compliance check</div>
+  <div class="rm-item" onclick="menuEdit('review')"><span class="ms">edit</span> Edit review status</div>
+  <div class="rm-div"></div>
+  <div class="rm-item" onclick="menuHistory()"><span class="ms">history</span> Audit history</div>
+</div>
+
+<!-- Persona switcher -->
+<div class="persona-pill">
+  <button id="pp-ground" class="on" onclick="setPersona('ground')"><span class="ms">agriculture</span> Ground staff</button>
+  <button id="pp-auditor" onclick="setPersona('auditor')"><span class="ms">fact_check</span> Auditor</button>
+</div>
+
+<div class="toast" id="toast"><span class="ms">check_circle</span><span id="toast-txt"></span></div>
+
+<script>
+/* ═══════════ Data ═══════════ */
+var deliveries = [
+  { id:2587, wb:2829, date:'05 Oct 2025', agg:'Istekhar', farmer:'Mahfooj Ali', village:'Ramnagar', net:6380, moist:59, km:'3.2', core:'Pass', comp:'Pass', review:'Verified', rdate:'12 Oct 2025', comment:'Moisture reading confirmed after recalibration — OK.' },
+  { id:2591, wb:2833, date:'05 Oct 2025', agg:'Istekhar', farmer:'Salim Khan', village:'Tindola', net:5240, moist:22, km:'2.1', core:'Pass', comp:'Pending', review:'Pending', rdate:'—', comment:'' },
+  { id:2596, wb:2838, date:'06 Oct 2025', agg:'RANJEET VERMA', farmer:'Hukam singh', village:'Sahabpur', net:4980, moist:18, km:'4.5', core:'Pass', comp:'Pass', review:'Verified', rdate:'10 Oct 2025', comment:'All checks OK — declaration and photos in order.' },
+  { id:2602, wb:2844, date:'07 Oct 2025', agg:'Istekhar', farmer:'Ram Prasad', village:'Ramnagar', net:5760, moist:25, km:'1.8', core:'Pass', comp:'Flagged', review:'Needs Clarification', rdate:'11 Oct 2025', comment:'Aggregator declaration missing signature — please re-upload.' },
+  { id:2610, wb:2852, date:'08 Oct 2025', agg:'RANJEET VERMA', farmer:'Chhote Lal', village:'Fatehpur', net:4420, moist:31, km:'3.9', core:'Pending', comp:'Pending', review:'Pending', rdate:'—', comment:'' },
+  { id:2614, wb:2856, date:'09 Oct 2025', agg:'Istekhar', farmer:'Mahfooj Ali', village:'Ramnagar', net:5110, moist:20, km:'3.2', core:'Pass', comp:'Pass', review:'Verified', rdate:'13 Oct 2025', comment:'Verified — evidence photos match WB receipt.' },
+  { id:2621, wb:2863, date:'10 Oct 2025', agg:'RANJEET VERMA', farmer:'Hukam singh', village:'Sahabpur', net:4630, moist:24, km:'4.5', core:'Pass', comp:'Pending', review:'Pending', rdate:'—', comment:'' },
+  { id:2627, wb:2869, date:'11 Oct 2025', agg:'Istekhar', farmer:'Noor Mohammad', village:'Tindola', net:4680, moist:19, km:'2.4', core:'Pending', comp:'Pending', review:'Pending', rdate:'—', comment:'' }
+];
+
+var auditHistory = [
+  { d:'05 Oct 2025', t:'14:32', actor:'girish@biofuelcircle.com', sub:'WH Manager, Ramnagar', desc:'Marked <b>Category K</b> — delivery tagged for carbon project (dMRV).' },
+  { d:'05 Oct 2025', t:'14:35', actor:'girish@biofuelcircle.com', sub:'WH Manager, Ramnagar', desc:'Remark added.<span class="quote">"Rice straw bales — slight surface moisture on outer layer, no visible mixing."</span>' },
+  { d:'05 Oct 2025', t:'15:10', actor:'WH Manager', sub:'Ramnagar BMB', desc:'<b>2 photos added</b> — Bales at weighbridge, Trolley.' },
+  { d:'09 Oct 2025', t:'11:02', actor:'auditor@bfc', sub:'dMRV Auditor', desc:'Status changed to <b>Needs Clarification</b>.<span class="quote">"59% moisture — please verify."</span>' },
+  { d:'11 Oct 2025', t:'09:44', actor:'WH Manager', sub:'Ramnagar BMB', desc:'Clarification resolved — moisture meter recalibrated, reading confirmed; photo attached.' },
+  { d:'12 Oct 2025', t:'10:15', actor:'auditor@bfc', sub:'dMRV Auditor', desc:'Marked <b>Verified</b>.' }
+];
+
+/* dMRV entry stream — newest first */
+var dmrvEntries = [
+  { d:'05 Oct 2025', t:'15:10', author:'WH Manager', sub:'Ramnagar BMB', text:'',
+    photos:[
+      { label:'Bales at weighbridge', grad:'linear-gradient(135deg,#7a9b5e,#4e6b3a)' },
+      { label:'Trolley', grad:'linear-gradient(135deg,#9a8a5c,#6b5c38)' },
+      { label:'Biomass close-up', grad:'linear-gradient(135deg,#b3a458,#82763a)' }
+    ] },
+  { d:'05 Oct 2025', t:'14:35', author:'girish@biofuelcircle.com', sub:'WH Manager, Ramnagar',
+    text:'Rice straw bales — slight surface moisture on outer layer, no visible mixing.', photos:[] }
+];
+var pendingPhotos = 0;
+
+var persona = 'ground';
+var navStack = [];
+var currentScreen = 'scr-delivery';
+var reviewFilter = 'all';
+var actRowIdx = -1;
+
+/* ═══════════ Shell ═══════════ */
+function toggleSidebar(){ document.getElementById('app').classList.toggle('collapsed'); }
+function toggleL1(head){ head.parentElement.classList.toggle('open'); }
+document.querySelectorAll('.grp-head').forEach(function(h){
+  h.addEventListener('click', function(e){ e.stopPropagation(); h.parentElement.classList.toggle('open'); });
+});
+function setActive(el){
+  document.querySelectorAll('#sidebar-ground .item.active').forEach(function(a){ a.classList.remove('active'); });
+  el.classList.add('active');
+}
+function setAudActive(el){
+  document.querySelectorAll('#sidebar-auditor .item.active').forEach(function(a){ a.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+/* ═══════════ Navigation ═══════════ */
+function showScreen(id){
+  document.querySelectorAll('.scr').forEach(function(s){ s.style.display = 'none'; });
+  document.getElementById(id).style.display = 'block';
+  currentScreen = id;
+  document.getElementById('dd-back-bar').style.display = (id === 'scr-delivery' && persona === 'auditor') ? 'flex' : 'none';
+}
+function go(id, push){
+  if (push !== false) navStack.push(currentScreen);
+  showScreen(id);
+}
+function goBack(){
+  var prev = navStack.pop() || (persona === 'auditor' ? 'scr-auditor' : 'scr-delivery');
+  showScreen(prev);
+}
+
+/* ═══════════ Persona ═══════════ */
+function setPersona(p){
+  persona = p;
+  navStack = [];
+  document.getElementById('pp-ground').classList.toggle('on', p === 'ground');
+  document.getElementById('pp-auditor').classList.toggle('on', p === 'auditor');
+  document.getElementById('sidebar-ground').style.display = p === 'ground' ? 'flex' : 'none';
+  document.getElementById('sidebar-auditor').style.display = p === 'auditor' ? 'flex' : 'none';
+  document.getElementById('role-tag').style.display = p === 'auditor' ? 'inline-block' : 'none';
+  document.getElementById('avatar').textContent = p === 'auditor' ? 'A' : 'G';
+  showScreen(p === 'auditor' ? 'scr-auditor' : 'scr-delivery');
+}
+
+/* ═══════════ Delivery tabs ═══════════ */
+function setDDTab(el, key){
+  el.parentElement.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+  ['ov','cf','inv','dmrv'].forEach(function(k){
+    document.getElementById('pane-' + k).classList.toggle('active', k === key);
+  });
+}
+function setPTab(el, key){
+  el.parentElement.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+  ['p-act','p-prof','p-gis','p-led','p-hist'].forEach(function(k){
+    document.getElementById('pane-' + k).classList.toggle('active', k === key);
+  });
+}
+
+/* ═══════════ dMRV tab behaviours ═══════════ */
+function nowStamp(){
+  return { d:'16 Jul 2026', t: new Date().toTimeString().slice(0,5) };
+}
+function toggleCatK(cb){
+  document.getElementById('dmrv-disclosed').classList.toggle('on', cb.checked);
+  document.getElementById('dd-dmrv-tag').style.display = cb.checked ? 'inline-block' : 'none';
+  var n = nowStamp();
+  auditHistory.push({ d:n.d, t:n.t, actor:'girish@biofuelcircle.com', sub:'WH Manager, Ramnagar',
+    desc: cb.checked ? 'Marked <b>Category K</b> — delivery tagged for carbon project (dMRV).' : 'Category K <b>unmarked</b> — delivery removed from carbon project.' });
+  renderAudit();
+  toast(cb.checked ? 'Delivery tagged Category K (dMRV)' : 'Category K removed');
+}
+function attachPhoto(){
+  pendingPhotos++;
+  var b = document.getElementById('attach-badge');
+  b.textContent = pendingPhotos;
+  b.style.display = 'inline-block';
+  toast(pendingPhotos + ' photo' + (pendingPhotos > 1 ? 's' : '') + ' attached — will save with this post');
+}
+function postEntry(){
+  var input = document.getElementById('dmrv-input');
+  var v = input.value.trim();
+  if (!v && !pendingPhotos){ toast('Type a remark or attach a photo first'); return; }
+  var n = nowStamp();
+  var entry = { d:n.d, t:n.t, author:'girish@biofuelcircle.com', sub:'WH Manager, Ramnagar', text:v, photos:[] };
+  for (var i = 0; i < pendingPhotos; i++){
+    entry.photos.push({ label:'Evidence photo', grad:'linear-gradient(135deg,#6f8f6f,#48604a)' });
+  }
+  dmrvEntries.unshift(entry); // newest first
+  var parts = [];
+  if (v) parts.push('Remark added.<span class="quote">"' + escapeHtml(v) + '"</span>');
+  if (pendingPhotos) parts.push('<b>' + pendingPhotos + ' photo' + (pendingPhotos > 1 ? 's' : '') + ' added</b>.');
+  auditHistory.push({ d:n.d, t:n.t, actor:'girish@biofuelcircle.com', sub:'WH Manager, Ramnagar', desc:parts.join(' ') });
+  input.value = '';
+  pendingPhotos = 0;
+  document.getElementById('attach-badge').style.display = 'none';
+  renderEntries();
+  renderAudit();
+  toast('Posted — saved to audit history');
+}
+function renderEntries(){
+  var el = document.getElementById('entry-stream');
+  var html = '';
+  dmrvEntries.forEach(function(en){
+    html += '<div class="entry">'
+      + '<div class="entry-head"><b>' + en.author + '</b>'
+      + (en.sub ? '<span>' + en.sub + '</span>' : '')
+      + '<span>·</span><span>' + en.d + ', ' + en.t + '</span></div>';
+    if (en.text) html += '<div class="entry-text">' + escapeHtml(en.text) + '</div>';
+    if (en.photos.length){
+      html += '<div class="entry-photos">';
+      en.photos.forEach(function(p){
+        html += '<div class="photo-tile">'
+          + '<div class="photo-thumb" style="background:' + p.grad + '"><span class="ms">image</span></div>'
+          + '<div class="photo-cap">' + p.label + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+/* ═══════════ Audit history side panel ═══════════ */
+function openAuditPanel(id){
+  document.getElementById('drawer-del-id').textContent = id || 2587;
+  renderAudit();
+  document.getElementById('audit-drawer').classList.add('on');
+}
+function closeAuditPanel(){ document.getElementById('audit-drawer').classList.remove('on'); }
+function renderAudit(){
+  var el = document.getElementById('audit-tl');
+  var html = '';
+  auditHistory.forEach(function(ev){
+    html += '<div class="tl-row">'
+      + '<div class="tl-date"><span class="d">' + ev.d + '</span><br>' + ev.t + '</div>'
+      + '<div class="tl-spine"><div class="tl-dot"></div><div class="tl-line"></div></div>'
+      + '<div class="tl-actor">' + ev.actor + (ev.sub ? '<div class="sub">' + ev.sub + '</div>' : '') + '</div>'
+      + '<div class="tl-desc">' + ev.desc + '</div>'
+      + '</div>';
+  });
+  el.innerHTML = html;
+}
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ═══════════ Auditor table ═══════════ */
+function pillFor(v){
+  if (v === 'Pass' || v === 'Verified') return '<span class="pill pill-pass">' + v.toUpperCase() + '</span>';
+  if (v === 'Flagged') return '<span class="pill pill-flag">FLAGGED</span>';
+  if (v === 'Needs Clarification') return '<span class="pill pill-clar">NEEDS CLARIFICATION</span>';
+  return '<span class="pill pill-pending">PENDING</span>';
+}
+function renderAudTable(){
+  var tb = document.getElementById('aud-tbody');
+  var html = '';
+  deliveries.forEach(function(dl, i){
+    if (reviewFilter !== 'all' && dl.review !== reviewFilter) return;
+    var dry = Math.round(dl.net * (1 - dl.moist / 100));
+    html += '<tr>'
+      + '<td><span class="party-link" onclick="crossLaunch(\'delivery-' + dl.id + '\')">' + dl.id + '<span class="ms nt">open_in_new</span></span><div class="deal-id">WB ' + dl.wb + '</div></td>'
+      + '<td>' + dl.date + '</td>'
+      + '<td><span class="party-link" onclick="crossLaunch(\'partner\')">' + dl.agg + '<span class="ms nt">open_in_new</span></span></td>'
+      + '<td><span class="party-link" onclick="crossLaunch(\'partner\')">' + dl.farmer + '<span class="ms nt">open_in_new</span></span><div class="party-sub">' + dl.village + '</div></td>'
+      + '<td><b>' + (dl.net / 1000).toFixed(2) + ' MT</b><div class="wt-sub">Moisture ' + dl.moist + '% · Dry ' + (dry / 1000).toFixed(2) + ' MT</div></td>'
+      + '<td><span class="dist-link" onclick="openWD(\'' + dl.km + '\')">' + dl.km + ' km</span></td>'
+      + '<td>' + editIcon(i, 'core') + pillFor(dl.core) + '</td>'
+      + '<td>' + editIcon(i, 'comp') + pillFor(dl.comp) + '</td>'
+      + '<td>' + editIcon(i, 'review') + pillFor(dl.review)
+      + (dl.comment ? '<div class="latest-comment" title="View audit history" onclick="openAuditPanel(' + dl.id + ')">&ldquo;' + escapeHtml(dl.comment) + '&rdquo; <span class="ms">history</span></div>' : '')
+      + '</td>'
+      + '<td style="color:var(--muted)">' + dl.rdate + '</td>'
+      + '<td><button class="kebab-btn" title="Actions" onclick="toggleRowMenu(event,' + i + ')"><span class="ms">more_vert</span></button></td>'
+      + '</tr>';
+  });
+  if (!html) html = '<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:26px">No deliveries match this filter.</td></tr>';
+  tb.innerHTML = html;
+  updateCounts();
+}
+function updateCounts(){
+  var c = { Pending:0, 'Needs Clarification':0, Verified:0 };
+  deliveries.forEach(function(d){ if (c[d.review] !== undefined) c[d.review]++; });
+  document.getElementById('cnt-all').textContent = deliveries.length;
+  document.getElementById('cnt-pending').textContent = c.Pending;
+  document.getElementById('cnt-clar').textContent = c['Needs Clarification'];
+  document.getElementById('cnt-verified').textContent = c.Verified;
+}
+function setReviewChip(el){
+  document.querySelectorAll('#review-chips .chip').forEach(function(ch){ ch.classList.remove('sel'); });
+  el.classList.add('sel');
+  reviewFilter = el.getAttribute('data-f');
+  renderAudTable();
+}
+/* Cross-launch: open in-file screens in a new tab via URL hash */
+function crossLaunch(hash){
+  window.open(location.href.split('#')[0] + '#' + hash, '_blank');
+}
+
+/* Status edit popover — status type pre-selected (from cell icon or kebab menu) */
+var fieldLabels = { core:'Core check', comp:'Compliance check', review:'Review status' };
+function editIcon(i, field){
+  return '<span class="ms cell-edit" title="Edit ' + fieldLabels[field].toLowerCase()
+    + '" onclick="openStatusEdit(event,' + i + ',\'' + field + '\')">edit</span>';
+}
+function openStatusEdit(e, idx, field, anchorRect){
+  if (e) e.stopPropagation();
+  closeRowMenu();
+  actRowIdx = idx;
+  var dl = deliveries[idx];
+  document.getElementById('rev-title').textContent = fieldLabels[field] + ' — Delivery ' + dl.id;
+  document.getElementById('rev-field').value = field; // pre-selected; "Status of" dropdown stays hidden
+  document.getElementById('rev-value').selectedIndex = 0;
+  document.getElementById('rev-comment').value = '';
+  document.getElementById('rev-err').style.display = 'none';
+  var pop = document.getElementById('rev-pop');
+  pop.style.display = 'block';
+  var r = anchorRect || e.currentTarget.getBoundingClientRect();
+  var pw = pop.offsetWidth || 320;
+  var ph = pop.offsetHeight || 330;
+  pop.style.left = Math.max(10, Math.min(r.left, window.innerWidth - pw - 10)) + 'px';
+  pop.style.top = Math.max(10, Math.min(r.bottom + 6, window.innerHeight - ph - 10)) + 'px';
+}
+function closeReview(){ document.getElementById('rev-pop').style.display = 'none'; }
+
+/* Kebab row menu — single shared element, only one open at a time */
+var menuRowIdx = -1;
+var menuAnchorRect = null;
+function toggleRowMenu(e, idx){
+  e.stopPropagation();
+  var m = document.getElementById('row-menu');
+  if (m.style.display === 'block' && menuRowIdx === idx){ closeRowMenu(); return; }
+  closeReview();
+  menuRowIdx = idx;
+  menuAnchorRect = e.currentTarget.getBoundingClientRect();
+  m.style.display = 'block';
+  var mw = m.offsetWidth || 212;
+  var mh = m.offsetHeight || 170;
+  m.style.left = Math.max(10, Math.min(menuAnchorRect.right - mw, window.innerWidth - mw - 10)) + 'px';
+  m.style.top = Math.max(10, Math.min(menuAnchorRect.bottom + 4, window.innerHeight - mh - 10)) + 'px';
+}
+function closeRowMenu(){ document.getElementById('row-menu').style.display = 'none'; }
+function menuEdit(field){
+  openStatusEdit(null, menuRowIdx, field, menuAnchorRect);
+}
+function menuHistory(){
+  closeRowMenu();
+  openAuditPanel(deliveries[menuRowIdx].id);
+}
+function saveReview(){
+  var v = document.getElementById('rev-comment').value.trim();
+  if (!v){ document.getElementById('rev-err').style.display = 'block'; return; }
+  var field = document.getElementById('rev-field').value;
+  var val = document.getElementById('rev-value').value;
+  var dl = deliveries[actRowIdx];
+  if (field === 'core') dl.core = val;
+  else if (field === 'comp') dl.comp = val;
+  else dl.review = val;
+  dl.rdate = '16 Jul 2026';
+  dl.comment = v;
+  closeReview();
+  renderAudTable();
+  logAuditorEvent(dl, fieldLabels[field] + ' set to <b>' + val + '</b>.<span class="quote">"' + escapeHtml(v) + '"</span>');
+  toast('Saved — ' + fieldLabels[field] + ' → ' + val + ' on delivery ' + dl.id);
+}
+document.addEventListener('click', function(){ closeReview(); closeRowMenu(); });
+document.getElementById('rev-pop').addEventListener('click', function(e){ e.stopPropagation(); });
+document.getElementById('row-menu').addEventListener('click', function(e){ e.stopPropagation(); });
+
+function logAuditorEvent(dl, desc){
+  var n = nowStamp();
+  auditHistory.push({ d:n.d, t:n.t, actor:'auditor@bfc', sub:'dMRV Auditor', desc:desc });
+  renderAudit();
+}
+
+/* Inventory sub-tabs */
+function setInvTab(el, key){
+  el.parentElement.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+  ['inv-sum','inv-log'].forEach(function(k){
+    document.getElementById('pane-' + k).classList.toggle('active', k === key);
+  });
+}
+
+/* ═══════════ Work Done modal ═══════════ */
+function openWD(km){
+  document.getElementById('wd-km').textContent = km + ' km';
+  document.getElementById('wd-km2').textContent = km + ' km';
+  document.getElementById('wd-modal').classList.add('on');
+}
+function closeWD(){ document.getElementById('wd-modal').classList.remove('on'); }
+
+/* ═══════════ Toast ═══════════ */
+var toastTimer = null;
+function toast(msg){
+  document.getElementById('toast-txt').textContent = msg;
+  var t = document.getElementById('toast');
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 2600);
+}
+
+/* ═══════════ Init ═══════════ */
+renderEntries();
+renderAudit();
+renderAudTable();
+
+/* Hash navigation — cross-launched tabs land on the right screen */
+(function(){
+  var h = location.hash.replace('#', '');
+  if (h.indexOf('delivery-') === 0){
+    showScreen('scr-delivery');
+    setDDTab(document.querySelectorAll('#scr-delivery .tabs .tab')[3], 'dmrv');
+    var id = h.replace('delivery-', '');
+    if (id !== '2587') toast('Mockup: showing delivery 2587 details for all rows');
+  } else if (h === 'partner'){
+    showScreen('scr-partner');
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Farmer 360 — Ramesh Kumar Patel</title>
+
+<!-- IBM Plex Sans + IBM Plex Mono + Material Symbols -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+<style>
+  :root {
+    /* Palette from aggregation_plan_v16 */
+    --green-700: #1a8a3c;
+    --green-800: #0f6e2e;
+    --green-soft: #e8f5ec;
+    --green-softer: #f0f7f2;
+    --sidebar: #5b9c53;
+    --sidebar-brand: #4e9146;
+    --sidebar-sec: #3f8340;
+    --sidebar-on: #2f7a33;
+
+    --ink-900: #1f2937;
+    --ink-500: #6b7280;
+    --ink-300: #9ca3af;
+    --ink-100: #f3f4f6;
+
+    --bg: #f4f6f5;
+    --surface: #FFFFFF;
+    --border: #e5e7eb;
+    --border-strong: #c8d0cc;
+
+    --red: #C62828;
+    --red-soft: #FFEBEE;
+    --purple: #6A4FA3;
+    --purple-soft: #EFEAF8;
+    --blue-soft: #dbeafe;
+    --blue: #1e63b0;
+
+    --ai-pink: #DB2777;
+    --ai-purple: #7C3AED;
+
+    --radius-md: 10px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body, button, input, select, textarea {
+    font-family: 'IBM Plex Sans', 'IBMPlexSans', system-ui, sans-serif;
+  }
+
+  body {
+    background: #fff;
+    color: var(--ink-900);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    vertical-align: middle;
+    user-select: none;
+  }
+  .icon-sm { font-size: 16px; }
+  .icon-md { font-size: 18px; }
+
+  /* ===== Topbar (production) ===== */
+  .topbar {
+    background: var(--green-700);
+    color: white;
+    padding: 0 18px;
+    height: 50px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 200;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; }
+  .topbar-loc { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; }
+  .topbar-actions { display: flex; align-items: center; gap: 14px; }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: white; color: var(--green-700);
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 13px;
+  }
+
+  /* ===== Shell ===== */
+  .shell { display: grid; grid-template-columns: 232px 1fr; min-height: calc(100vh - 50px); }
+
+  /* ===== Sidebar (production green) ===== */
+  .snav {
+    background: var(--sidebar);
+    color: white;
+    padding: 0 0 30px;
+    font-size: 12.5px;
+    position: sticky; top: 50px;
+    height: calc(100vh - 50px);
+    overflow-y: auto;
+  }
+  .snav .brand {
+    font-size: 14px; font-weight: 600; color: #fff;
+    padding: 13px 14px;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--sidebar-brand);
+  }
+  .snav .it {
+    padding: 9px 14px 9px 17px;
+    display: flex; align-items: center; gap: 11px;
+    cursor: pointer; color: #fff; white-space: nowrap;
+  }
+  .snav .it .material-symbols-outlined { font-size: 17px; }
+  .snav .it:hover { background: rgba(255,255,255,0.10); }
+  .snav .it.home { background: #6aa763; }
+  .snav .it.on {
+    background: #fff; color: var(--sidebar-on);
+    font-weight: 500;
+    border-radius: 0 999px 999px 0;
+    margin-right: 12px;
+  }
+  .snav .it.on .material-symbols-outlined { color: var(--sidebar-on); }
+  .snav .sec {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--sidebar-sec); color: #fff;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    padding: 10px 14px; cursor: pointer;
+  }
+  .snav .sec .material-symbols-outlined { font-size: 16px; opacity: 0.9; }
+  .snav .subsec {
+    display: flex; align-items: center; justify-content: space-between;
+    color: rgba(255,255,255,0.82);
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em;
+    padding: 9px 14px 9px 19px; cursor: pointer;
+  }
+  .snav .subsec .material-symbols-outlined { font-size: 15px; opacity: 0.75; }
+  .snav .it.nested { padding-left: 29px; }
+
+  /* ===== Page header strip (production, as-is) ===== */
+  .page-header {
+    background: #f6f7f7;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 28px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    position: sticky; top: 50px; z-index: 100;
+  }
+  .page-header-left { display: flex; align-items: center; gap: 12px; }
+  .back-btn {
+    width: 32px; height: 32px; border: none; background: transparent;
+    border-radius: 50%; cursor: pointer; display: grid; place-items: center;
+    color: var(--ink-900);
+  }
+  .back-btn:hover { background: var(--ink-100); }
+  .page-header-id {
+    font-size: 14px; font-weight: 600; color: var(--ink-900);
+    letter-spacing: 0.03em; text-transform: uppercase;
+  }
+  .status-chip {
+    display: inline-flex; align-items: center;
+    background: var(--blue-soft); color: var(--blue);
+    border-radius: 6px;
+    padding: 0 10px; height: 24px;
+    font-size: 12px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--green-700); color: white; }
+  .btn-primary:hover { background: var(--green-800); }
+  .btn-danger-ghost { background: white; color: var(--red); border-color: rgba(198,40,40,0.4); }
+  .btn-danger-ghost:hover { background: var(--red-soft); }
+
+  /* ===== Content ===== */
+  main { padding: 20px 28px 64px; max-width: 1360px; }
+
+  /* ===== Profile header (production 3-column, as-is) ===== */
+  .profile-header {
+    display: flex; gap: 0;
+    padding: 6px 0 18px;
+  }
+  .profile-identity { flex: 1.3; padding-right: 28px; }
+  .profile-identity h1 { font-size: 24px; font-weight: 600; color: var(--ink-900); margin-bottom: 8px; }
+  .profile-meta { display: flex; flex-direction: column; gap: 6px; color: var(--ink-500); font-size: 14px; }
+  .profile-meta span { display: inline-flex; align-items: center; gap: 8px; }
+  .copy-icon { font-size: 16px; color: var(--ink-500); cursor: pointer; margin-left: 4px; }
+
+  .profile-col { flex: 1; border-left: 1px solid var(--border); padding-left: 28px; }
+  .profile-col-title {
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .profile-col-title.interests { color: var(--green-700); }
+  .profile-col-title.tags { color: var(--purple); }
+  .col-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .col-dot.green { background: var(--green-700); }
+  .col-dot.purple { background: var(--purple); }
+
+  .chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 0 12px; height: 28px;
+    border-radius: 6px;
+    font-size: 13px; font-weight: 500;
+    border: 1px solid transparent;
+  }
+  .tag .material-symbols-outlined { font-size: 15px; }
+  .tag-interest { background: var(--green-soft); color: var(--green-800); }
+  .tag-capability { background: var(--purple-soft); color: var(--purple); }
+  .tag-add {
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    color: var(--ink-500);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .tag-add:hover { border-color: var(--green-700); color: var(--green-700); }
+
+  /* ===== Tabs (production) ===== */
+  .tabs {
+    display: flex; gap: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .tab {
+    padding: 12px 18px;
+    color: var(--ink-500);
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.15s;
+  }
+  .tab .material-symbols-outlined { font-size: 18px; }
+  .tab:hover { color: var(--green-800); }
+  .tab.active { color: var(--green-800); border-bottom-color: var(--green-700); font-weight: 600; }
+
+  /* ===== Activity section head ===== */
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .section-title { font-size: 16px; font-weight: 600; color: var(--ink-900); }
+  .section-head-actions { display: flex; align-items: center; gap: 12px; }
+  .section-head-actions .filter-select,
+  .section-head-actions .btn-ai {
+    height: 44px;
+    display: inline-flex; align-items: center;
+  }
+
+  .filter-select {
+    appearance: none;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: white url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='rgba(0,0,0,0.6)'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 10px center;
+    padding: 0 34px 0 14px;
+    font-size: 14px;
+    color: var(--ink-900);
+    cursor: pointer;
+  }
+  .filter-select:focus { outline: none; border-color: var(--green-700); }
+
+  .btn-ai {
+    gap: 10px;
+    padding: 0 20px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: white;
+    font-size: 14px; font-weight: 600;
+    color: var(--ink-900);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-ai:hover { border-color: var(--ai-purple); background: #FCFAFF; }
+  .btn-ai .ai-icon, .ai-card-title .ai-icon {
+    font-size: 24px;
+    font-variation-settings: 'FILL' 0;
+    background: linear-gradient(135deg, var(--ai-purple) 0%, var(--ai-pink) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ===== AI Summary card ===== */
+  .ai-card {
+    display: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 24px 26px;
+    margin-bottom: 24px;
+  }
+  .ai-card.show { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .ai-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .ai-card-title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; }
+  .ai-card-meta { color: var(--ink-500); font-size: 13px; }
+
+  .ai-loading { display: none; padding: 4px 0; }
+  .ai-loading.show { display: block; }
+  .shimmer-line {
+    height: 13px; border-radius: 4px; margin: 10px 0;
+    background: linear-gradient(90deg, #E9EEE9 0%, #F6F9F6 50%, #E9EEE9 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  .shimmer-line.w-90 { width: 90%; }
+  .shimmer-line.w-70 { width: 70%; }
+  .shimmer-line.w-80 { width: 80%; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .ai-content { display: none; }
+  .ai-content.show { display: block; animation: fadeIn 0.4s ease; }
+
+  .ai-prediction {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 14px;
+    background: var(--green-softer);
+  }
+  .ai-prediction .material-symbols-outlined { color: var(--green-700); font-size: 22px; }
+  .ai-prediction-label { font-size: 12px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 2px; }
+  .ai-prediction-value { font-size: 15px; font-weight: 600; color: var(--ink-900); }
+
+  .overline {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-500); font-weight: 600; margin-bottom: 12px;
+  }
+  .maturity-section { margin-bottom: 20px; }
+  .maturity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .maturity-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--green-soft);
+    border: 1px solid rgba(26,138,60,0.25);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13px; font-weight: 500; color: var(--green-800);
+  }
+  .maturity-chip.pending { background: #FAFAFA; border-color: var(--border); color: var(--ink-500); font-weight: 400; }
+  .maturity-chip .material-symbols-outlined { font-size: 18px; }
+  .maturity-chip.pending .material-symbols-outlined { color: var(--ink-300); }
+
+  .metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .metric { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 18px; }
+  .metric-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-500); margin-bottom: 4px; font-weight: 600; }
+  .metric-value { font-size: 24px; font-weight: 600; color: var(--ink-900); }
+  .metric-unit { font-size: 14px; color: var(--ink-500); font-weight: 400; }
+
+  .insights-list { margin-top: 20px; }
+  .insight {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 14px; color: var(--ink-900); line-height: 1.6;
+  }
+  .insight:last-child { border-bottom: 0; padding-bottom: 0; }
+  .insight .material-symbols-outlined { font-size: 18px; color: var(--green-700); margin-top: 2px; flex-shrink: 0; }
+  .insight strong { font-weight: 600; }
+
+  /* ===== Composer — inline bar ===== */
+  .post-composer {
+    display: flex; align-items: center; gap: 4px;
+    border: 1px solid var(--green-700);
+    background: #FBFDFB;
+    border-radius: var(--radius-sm);
+    padding: 4px 6px 4px 14px;
+    margin-bottom: 24px;
+    transition: border-color 0.2s ease;
+  }
+  .post-composer:focus-within { border-color: var(--green-800); background: #fff; }
+  .composer-input {
+    flex: 1;
+    border: none; background: transparent; outline: none;
+    font-size: 14px; color: var(--ink-900);
+    resize: none; line-height: 1.5;
+    padding: 7px 0;
+    height: 36px;
+  }
+  .composer-input::placeholder { color: var(--ink-300); }
+  .composer-icon-btn {
+    width: 32px; height: 32px;
+    border: none; background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer; display: grid; place-items: center;
+    color: var(--ink-500);
+    flex-shrink: 0;
+  }
+  .composer-icon-btn:hover { background: var(--green-softer); color: var(--green-800); }
+  .btn-post {
+    background: var(--green-700); color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .btn-post:hover { background: var(--green-800); }
+  .btn-post:disabled { background: var(--green-soft); color: var(--green-700); cursor: not-allowed; }
+
+  .attachment-preview { display: none; flex-wrap: wrap; gap: 8px; margin: -12px 0 24px; }
+  .attachment-preview.show { display: flex; }
+  .attachment-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 8px 5px 10px;
+    font-size: 13px; color: var(--ink-900);
+  }
+  .attachment-chip .material-symbols-outlined { font-size: 15px; color: var(--ink-500); }
+  .attachment-chip .remove-btn {
+    width: 20px; height: 20px; border: none; background: transparent;
+    border-radius: 4px; cursor: pointer; display: grid; place-items: center;
+    color: var(--ink-500);
+  }
+  .attachment-chip .remove-btn:hover { background: var(--red-soft); color: var(--red); }
+  .attachment-chip .remove-btn .material-symbols-outlined { font-size: 15px; }
+
+  .note-images { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .note-image {
+    width: 110px; height: 90px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: #F5F5F5;
+    display: grid; place-items: center;
+    color: var(--ink-500);
+    overflow: hidden; position: relative; cursor: pointer;
+  }
+  .note-image .material-symbols-outlined { font-size: 26px; }
+  .note-image .img-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.55); color: white;
+    font-size: 12px; padding: 4px 8px; text-align: center;
+  }
+
+  /* ===== Timeline with day grouping ===== */
+  .timeline { position: relative; padding-left: 30px; }
+  .timeline::before {
+    content: '';
+    position: absolute; left: 15px; top: 12px; bottom: 12px;
+    width: 0;
+    border-left: 2px dotted rgba(26,138,60,0.35);
+  }
+
+  /* Day group headers — resting points for the eye */
+  .day-head {
+    position: relative; z-index: 1;
+    display: inline-block;
+    background: #fff;
+    margin: 22px 0 2px -30px;
+    padding: 3px 12px 3px 0;
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-500);
+  }
+  .day-head:first-child { margin-top: 0; }
+
+  .event {
+    position: relative;
+    padding: 16px 12px 18px 14px;
+    border-bottom: 1px solid var(--ink-100);
+    border-radius: var(--radius-sm);
+    transition: background 0.12s ease;
+    cursor: pointer;
+  }
+  .event:hover { background: var(--green-softer); }
+  .event:last-child { border-bottom: 0; }
+  .event.hidden { display: none; }
+
+  .event-marker {
+    position: absolute;
+    left: -30px; top: 16px;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--green-soft);
+    border: 1px solid rgba(26,138,60,0.25);
+    display: grid; place-items: center;
+    z-index: 1;
+  }
+  /* One optical size for every glyph */
+  .event-marker .material-symbols-outlined {
+    font-size: 16px; color: var(--green-800);
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  .event-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+  .event-main { flex: 1; max-width: 720px; }
+  .event-title {
+    font-weight: 600; color: var(--ink-900); font-size: 14px;
+    display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .actor-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--ink-100);
+    color: var(--ink-500);
+    padding: 2px 10px;
+    border-radius: 16px;
+    font-size: 12px; font-weight: 500;
+  }
+  .actor-chip .material-symbols-outlined { font-size: 13px; }
+  .event-desc { color: var(--ink-500); font-size: 14px; margin-top: 8px; line-height: 1.6; }
+  .event-time {
+    color: var(--ink-300); font-size: 13px;
+    white-space: nowrap; flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding-top: 2px;
+  }
+  .event-time .material-symbols-outlined { font-size: 15px; }
+
+  .inline-link {
+    color: var(--green-800);
+    text-decoration: underline;
+    text-decoration-color: rgba(26,138,60,0.35);
+    text-underline-offset: 2px;
+    font-weight: 500;
+  }
+  .inline-link.id { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+  .inline-link:hover { text-decoration-color: var(--green-700); color: var(--green-700); }
+
+  .record-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 8px;
+    padding: 5px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--green-800);
+    font-size: 13px;
+    text-decoration: none;
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .record-link:hover { background: var(--green-soft); }
+  .record-link .material-symbols-outlined { font-size: 15px; }
+
+  .event-note {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #F6F8F6;
+    border-left: 3px solid var(--green-700);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 14px;
+    color: rgba(0,0,0,0.75);
+    font-style: italic;
+  }
+
+  /* ===== Accordions with counts ===== */
+  .accordion {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 14px;
+  }
+  .accordion-head {
+    padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer;
+    font-weight: 600; font-size: 15px; color: var(--ink-900);
+  }
+  .accordion-head:hover { background: var(--green-softer); }
+  .accordion-head .head-label { display: flex; align-items: center; gap: 10px; }
+  .accordion-head .head-label .material-symbols-outlined { color: var(--green-700); font-size: 20px; }
+  .accordion-head > .material-symbols-outlined { color: var(--ink-500); }
+  .acc-count { font-size: 13px; font-weight: 400; color: var(--ink-500); margin-left: 6px; }
+
+  .accordions { margin-top: 32px; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--ink-300); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ===== Topbar ===== -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="material-symbols-outlined">menu</span>
+    BiofuelCircle
+  </div>
+  <div class="topbar-loc">
+    <span class="material-symbols-outlined icon-md">location_on</span>
+    Shirpur Biomass Bank, Jalgaon
+    <span class="material-symbols-outlined icon-sm">expand_more</span>
+  </div>
+  <div class="topbar-actions">
+    <span class="material-symbols-outlined">notifications</span>
+    <div class="avatar">G</div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ===== Sidebar (production) ===== -->
+  <aside class="snav">
+    <div class="brand"><span class="material-symbols-outlined">menu_open</span>BiofuelCircle</div>
+    <div class="it home"><span class="material-symbols-outlined">home</span>Home</div>
+    <div class="sec">MASTER DATA<span class="material-symbols-outlined">expand_less</span></div>
+    <div class="it nested on"><span class="material-symbols-outlined">person</span>Agri-Partners</div>
+    <div class="it nested"><span class="material-symbols-outlined">precision_manufacturing</span>Equipments</div>
+    <div class="it nested"><span class="material-symbols-outlined">tag</span>Crop/Deal Ids</div>
+    <div class="sec">BIOMASS<span class="material-symbols-outlined">expand_less</span></div>
+    <div class="subsec">SERVICE DEALS<span class="material-symbols-outlined">expand_less</span></div>
+    <div class="it nested"><span class="material-symbols-outlined">handshake</span>Aggregation</div>
+    <div class="it nested"><span class="material-symbols-outlined">groups</span>Labour</div>
+    <div class="it nested"><span class="material-symbols-outlined">local_shipping</span>Transport</div>
+    <div class="it nested"><span class="material-symbols-outlined">build</span>Equipment Rental</div>
+    <div class="subsec">PRODUCT DEALS<span class="material-symbols-outlined">expand_more</span></div>
+    <div class="subsec">OPERATIONS<span class="material-symbols-outlined">expand_less</span></div>
+    <div class="it nested"><span class="material-symbols-outlined">space_dashboard</span>Aggregation Plan</div>
+    <div class="it nested"><span class="material-symbols-outlined">calendar_month</span>Scheduling</div>
+    <div class="it nested"><span class="material-symbols-outlined">folder_copy</span>Ledger</div>
+    <div class="it nested"><span class="material-symbols-outlined">event_available</span>Attendance</div>
+    <div class="it nested"><span class="material-symbols-outlined">local_gas_station</span>Fuel</div>
+    <div class="it nested"><span class="material-symbols-outlined">device_thermostat</span>Record Moisture/Temp</div>
+    <div class="it nested"><span class="material-symbols-outlined">monitoring</span>Heap Temp &amp; Moisture Report</div>
+    <div class="subsec">DELIVERIES<span class="material-symbols-outlined">expand_less</span></div>
+    <div class="it nested"><span class="material-symbols-outlined">event_note</span>Delivery Planning</div>
+    <div class="it nested"><span class="material-symbols-outlined">south</span>Inward</div>
+    <div class="it nested"><span class="material-symbols-outlined">north</span>Outward</div>
+    <div class="sec">FOM<span class="material-symbols-outlined">expand_more</span></div>
+    <div class="sec">SETTLEMENT<span class="material-symbols-outlined">expand_more</span></div>
+  </aside>
+
+  <!-- ===== Main column ===== -->
+  <div>
+
+    <!-- Page header strip (production, as-is) -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <button class="back-btn"><span class="material-symbols-outlined">arrow_back</span></button>
+        <span class="page-header-id">Agri-Partner ID: 225326</span>
+        <span class="status-chip">Verified</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-danger-ghost">Mark invalid</button>
+        <button class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+
+    <main>
+
+      <!-- Profile header (production, as-is): name first, 3 columns -->
+      <section class="profile-header">
+        <div class="profile-identity">
+          <h1>Ramesh Kumar Patel</h1>
+          <div class="profile-meta">
+            <span><span class="material-symbols-outlined icon-sm">location_on</span> Shirpur Village · 3.2 km to Bank</span>
+            <span><span class="material-symbols-outlined icon-sm">call</span> +91 98765 43210 <span class="material-symbols-outlined copy-icon">content_copy</span></span>
+            <span><span class="material-symbols-outlined icon-sm">agriculture</span> Sugarcane · 3.5 acres</span>
+          </div>
+        </div>
+        <div class="profile-col">
+          <div class="profile-col-title interests"><span class="col-dot green"></span> Interests</div>
+          <div class="chip-wrap">
+            <span class="tag tag-interest"><span class="material-symbols-outlined">sell</span> Sell Biomass</span>
+            <span class="tag tag-interest"><span class="material-symbols-outlined">shopping_bag</span> Buy FOM</span>
+            <span class="tag tag-interest"><span class="material-symbols-outlined">agriculture</span> Rent Tractor</span>
+          </div>
+        </div>
+        <div class="profile-col">
+          <div class="profile-col-title tags"><span class="col-dot purple"></span> Tags</div>
+          <div class="chip-wrap">
+            <span class="tag tag-capability" title="Certified by BiofuelCircle"><span class="material-symbols-outlined">verified_user</span> Certified Driver: Baler</span>
+            <button class="tag tag-add"><span class="material-symbols-outlined icon-sm">add</span> Add tag</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tabs (production) -->
+      <div class="tabs">
+        <div class="tab">
+          <span class="material-symbols-outlined">person</span>
+          Farmer / Agri-Partners Details
+        </div>
+        <div class="tab active">
+          <span class="material-symbols-outlined">content_paste_search</span>
+          Activity
+        </div>
+        <div class="tab">
+          <span class="material-symbols-outlined">description</span>
+          History
+        </div>
+      </div>
+
+      <!-- ===== Activity ===== -->
+      <div class="section-head">
+        <div class="section-title">Activity Timeline</div>
+        <div class="section-head-actions">
+          <select class="filter-select" id="activityFilter" onchange="filterTimeline(this.value)">
+            <option value="all">All activities</option>
+            <option value="payments">Payments</option>
+            <option value="operations">Operations</option>
+            <option value="communication">Communication</option>
+            <option value="notes">Notes</option>
+          </select>
+          <button class="btn-ai" id="aiBtn" onclick="generateAISummary()">
+            <span class="material-symbols-outlined ai-icon">auto_awesome</span>
+            Generate AI Summary
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Summary card (appears on click) -->
+      <div class="ai-card" id="aiCard">
+        <div class="ai-card-head">
+          <div class="ai-card-title">
+            <span class="material-symbols-outlined ai-icon">auto_awesome</span>
+            AI Summary
+          </div>
+          <span class="ai-card-meta" id="aiCardMeta">Generating…</span>
+        </div>
+        <div class="ai-loading" id="aiLoading">
+          <div class="shimmer-line w-80"></div>
+          <div class="shimmer-line w-90"></div>
+          <div class="shimmer-line w-70"></div>
+        </div>
+        <div class="ai-content" id="aiContent">
+          <div class="ai-prediction">
+            <span class="material-symbols-outlined">event_upcoming</span>
+            <div>
+              <div class="ai-prediction-label">Harvest Prediction</div>
+              <div class="ai-prediction-value">Harvest window in 12–14 days</div>
+            </div>
+          </div>
+          <div class="maturity-section">
+            <div class="overline">Farmer Maturity Status</div>
+            <div class="maturity-grid">
+              <div class="maturity-chip"><span class="material-symbols-outlined">check_circle</span> Basic Data Captured</div>
+              <div class="maturity-chip"><span class="material-symbols-outlined">check_circle</span> Salesperson Meeting</div>
+              <div class="maturity-chip"><span class="material-symbols-outlined">check_circle</span> Farm Location Mapped</div>
+              <div class="maturity-chip"><span class="material-symbols-outlined">check_circle</span> Harvest Date Recorded</div>
+              <div class="maturity-chip"><span class="material-symbols-outlined">check_circle</span> Transaction History</div>
+              <div class="maturity-chip pending"><span class="material-symbols-outlined">radio_button_unchecked</span> Interest Revalidated</div>
+            </div>
+          </div>
+          <div class="maturity-section">
+            <div class="overline">Key Metrics</div>
+            <div class="metrics-row">
+              <div class="metric">
+                <div class="metric-label">Total Biomass</div>
+                <div class="metric-value">8.2 <span class="metric-unit">MT</span></div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">FOM Utilized</div>
+                <div class="metric-value">12 <span class="metric-unit">Bags</span></div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Net Settled</div>
+                <div class="metric-value">₹4,850</div>
+              </div>
+            </div>
+          </div>
+          <div class="insights-list">
+            <div class="insight">
+              <span class="material-symbols-outlined">trending_up</span>
+              <div>Consistent supplier — <strong>5 settled transactions</strong> in the last 6 months with no payment disputes.</div>
+            </div>
+            <div class="insight">
+              <span class="material-symbols-outlined">priority_high</span>
+              <div>Action required: <strong>Interest revalidation pending.</strong> Last touchpoint was 38 days ago.</div>
+            </div>
+            <div class="insight">
+              <span class="material-symbols-outlined">lightbulb</span>
+              <div>Expressed interest in <strong>renting a tractor</strong> — no tractor currently onboarded in this catchment. Equipment gap.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Composer -->
+      <div class="post-composer">
+        <textarea
+          class="composer-input"
+          id="composerInput"
+          placeholder="Post an internal note about Ramesh"
+          rows="1"
+          oninput="toggleSubmit()"
+        ></textarea>
+        <button class="composer-icon-btn" title="Attach image" onclick="addAttachment('image')">
+          <span class="material-symbols-outlined icon-md">image</span>
+        </button>
+        <button class="composer-icon-btn" title="Attach file" onclick="addAttachment('file')">
+          <span class="material-symbols-outlined icon-md">attach_file</span>
+        </button>
+        <button class="btn-post" id="postBtn" disabled onclick="submitPost()">
+          <span class="material-symbols-outlined icon-sm">send</span> Post
+        </button>
+      </div>
+      <div class="attachment-preview" id="attachmentPreview"></div>
+
+      <!-- Timeline with day grouping -->
+      <div class="timeline" id="timeline">
+
+        <div class="day-head">Today</div>
+
+        <div class="event" data-category="notes">
+          <div class="event-marker"><span class="material-symbols-outlined">sticky_note_2</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">
+                Field Note
+                <span class="actor-chip"><span class="material-symbols-outlined">person</span> Neha Kulkarni</span>
+              </div>
+              <div class="event-note">
+                Visited Ramesh today. Sugarcane standing well, but a 10×6 m patch near the south boundary has lodged due to last week's wind. He's asking if we can prioritise his pickup — worried about quality loss. Will follow up Thursday.
+              </div>
+              <div class="note-images">
+                <div class="note-image" style="background: linear-gradient(135deg, #B7CCB8, #8FAE91);">
+                  <span class="material-symbols-outlined" style="color: rgba(255,255,255,0.9);">image</span>
+                  <div class="img-label">Field view</div>
+                </div>
+                <div class="note-image" style="background: linear-gradient(135deg, #A1887F, #8D6E63);">
+                  <span class="material-symbols-outlined" style="color: rgba(255,255,255,0.9);">image</span>
+                  <div class="img-label">Lodged patch</div>
+                </div>
+              </div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 1h ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="payments">
+          <div class="event-marker"><span class="material-symbols-outlined">currency_rupee</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">Amount Paid <span class="actor-chip"><span class="material-symbols-outlined">bolt</span> Auto</span></div>
+              <div class="event-desc">₹1,245 paid via <a href="#" class="inline-link id">TXN-UPI/426891234567</a> to State Bank A/C ****6789.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 4h ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="payments">
+          <div class="event-marker"><span class="material-symbols-outlined">receipt_long</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">Invoice Generated <span class="actor-chip"><span class="material-symbols-outlined">bolt</span> Auto</span></div>
+              <div class="event-desc"><a href="#" class="inline-link id">INV-126MH16521</a> raised for 1.8 MT @ ₹692/MT — total ₹1,245.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 5h ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="operations">
+          <div class="event-marker"><span class="material-symbols-outlined">agriculture</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">Trolley Received <span class="actor-chip"><span class="material-symbols-outlined">person</span> Vijay Sharma</span></div>
+              <div class="event-desc"><a href="#" class="inline-link">1.8 MT Sugarcane</a> trolley received from farmer, recorded via weigh-bridge <a href="#" class="inline-link id">WS-2456</a>.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 6h ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="operations">
+          <div class="event-marker"><span class="material-symbols-outlined">grass</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">Extraction Complete <span class="actor-chip"><span class="material-symbols-outlined">person</span> Suresh Patil</span></div>
+              <div class="event-desc">Field cleared and biomass collected in 3.5 hours — see <a href="#" class="inline-link id">EXT-1142</a>.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 8h ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="operations">
+          <div class="event-marker"><span class="material-symbols-outlined">inventory_2</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">FOM Order Delivered <span class="actor-chip"><span class="material-symbols-outlined">person</span> Rajesh Desai</span></div>
+              <div class="event-desc">8 bags of <a href="#" class="inline-link">FOM</a> delivered to farmer and ₹3,600 collected — see <a href="#" class="inline-link id">DEL-8821</a>.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 18h ago</span>
+          </div>
+        </div>
+
+        <div class="day-head">Yesterday</div>
+
+        <div class="event" data-category="communication">
+          <div class="event-marker"><span class="material-symbols-outlined">chat</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">WhatsApp Response Received <span class="actor-chip"><span class="material-symbols-outlined">bolt</span> Auto</span></div>
+              <div class="event-desc">Farmer confirmed pickup slot for March 14 in reply to schedule message.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 1d ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="communication">
+          <div class="event-marker"><span class="material-symbols-outlined">chat</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">WhatsApp Message Sent <span class="actor-chip"><span class="material-symbols-outlined">bolt</span> Auto</span></div>
+              <div class="event-desc">Schedule confirmation message sent to farmer for March 14 slot.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 1d ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="operations">
+          <div class="event-marker"><span class="material-symbols-outlined">local_shipping</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">Baler Dispatched <span class="actor-chip"><span class="material-symbols-outlined">person</span> Priya Mehta</span></div>
+              <div class="event-desc">ABC Baler (Vehicle <a href="#" class="inline-link id">MH16-BA-4521</a>) dispatched to Shirpur Village — logged in <a href="#" class="inline-link id">LEDGER-DSP-3091</a>.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 1d ago</span>
+          </div>
+        </div>
+
+        <div class="day-head">Earlier this week</div>
+
+        <div class="event" data-category="operations">
+          <div class="event-marker"><span class="material-symbols-outlined">event_available</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">Schedule Confirmed <span class="actor-chip"><span class="material-symbols-outlined">person</span> Amit Joshi</span></div>
+              <div class="event-desc">Pre-extraction slasher confirmed for March 14, 09:00 AM — see <a href="#" class="inline-link id">SCH-7741</a>.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 2d ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="operations">
+          <div class="event-marker"><span class="material-symbols-outlined">event</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">Schedule Booked <span class="actor-chip"><span class="material-symbols-outlined">bolt</span> Auto</span></div>
+              <div class="event-desc">Slasher schedule booked from estimated harvest window — see <a href="#" class="inline-link id">SCH-7741</a>.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 2d ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="communication">
+          <div class="event-marker"><span class="material-symbols-outlined">call</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">Rural Ops Called Farmer <span class="actor-chip"><span class="material-symbols-outlined">person</span> Neha Kulkarni</span></div>
+              <div class="event-desc">T-1 scheduling call, 8 mins — confirmed harvest date and equipment needs.</div>
+              <div class="event-note">"Farmer confirmed field will be ready by March 14. Requested baler for 3.5 acres. Discussed FOM delivery schedule."</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 3d ago</span>
+          </div>
+        </div>
+
+        <div class="event" data-category="operations">
+          <div class="event-marker"><span class="material-symbols-outlined">verified_user</span></div>
+          <div class="event-row">
+            <div class="event-main">
+              <div class="event-title">KYC Approved <span class="actor-chip"><span class="material-symbols-outlined">person</span> Kavita Rane</span></div>
+              <div class="event-desc">State Bank A/C ****6789 verified and confirmed active.</div>
+            </div>
+            <span class="event-time"><span class="material-symbols-outlined">schedule</span> 3d ago</span>
+          </div>
+        </div>
+
+        <!-- One-time captures (GIS Mapping, Profile Created) live in the History tab -->
+
+      </div>
+
+      <!-- Accordions with record counts -->
+      <div class="accordions">
+        <div class="accordion">
+          <div class="accordion-head">
+            <span class="head-label"><span class="material-symbols-outlined">map</span> Farm Details &amp; GIS Mapping <span class="acc-count">· 1 polygon</span></span>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+        <div class="accordion">
+          <div class="accordion-head">
+            <span class="head-label"><span class="material-symbols-outlined">payments</span> Ledger &amp; Cashflow <span class="acc-count">· 5 settlements</span></span>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+        <div class="accordion">
+          <div class="accordion-head">
+            <span class="head-label"><span class="material-symbols-outlined">folder</span> Media &amp; Documents <span class="acc-count">· 6 files</span></span>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Timeline dropdown filter (day headers stay visible)
+  function filterTimeline(value) {
+    document.querySelectorAll('#timeline .event').forEach(ev => {
+      ev.classList.toggle('hidden', value !== 'all' && ev.dataset.category !== value);
+    });
+  }
+
+  // AI Summary — button-triggered card
+  function generateAISummary() {
+    const card = document.getElementById('aiCard');
+    const meta = document.getElementById('aiCardMeta');
+    const loading = document.getElementById('aiLoading');
+    const content = document.getElementById('aiContent');
+    const btn = document.getElementById('aiBtn');
+
+    card.classList.add('show');
+    meta.textContent = 'Generating…';
+    loading.classList.add('show');
+    content.classList.remove('show');
+    btn.disabled = true;
+
+    setTimeout(() => {
+      loading.classList.remove('show');
+      content.classList.add('show');
+      meta.textContent = 'Generated just now';
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined ai-icon">auto_awesome</span> Regenerate AI Summary';
+    }, 1100);
+  }
+
+  // Composer behavior
+  let attachments = [];
+
+  function toggleSubmit() {
+    const input = document.getElementById('composerInput');
+    document.getElementById('postBtn').disabled = input.value.trim().length === 0 && attachments.length === 0;
+  }
+
+  function addAttachment(type) {
+    const id = Date.now();
+    const label = type === 'image'
+      ? ['Field photo 1.jpg', 'Damaged crop.jpg', 'Receipt.jpg', 'Signed slip.jpg'][attachments.length % 4]
+      : ['Note.pdf', 'Inspection.pdf', 'Quote.pdf'][attachments.length % 3];
+    attachments.push({ id, type, label });
+    renderAttachments();
+    toggleSubmit();
+  }
+
+  function removeAttachment(id) {
+    attachments = attachments.filter(a => a.id !== id);
+    renderAttachments();
+    toggleSubmit();
+  }
+
+  function renderAttachments() {
+    const container = document.getElementById('attachmentPreview');
+    container.classList.toggle('show', attachments.length > 0);
+    container.innerHTML = attachments.map(a => `
+      <div class="attachment-chip">
+        <span class="material-symbols-outlined">${a.type === 'image' ? 'image' : 'description'}</span>
+        ${a.label}
+        <button class="remove-btn" onclick="removeAttachment(${a.id})" title="Remove">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+    `).join('');
+  }
+
+  function submitPost() {
+    const input = document.getElementById('composerInput');
+    const text = input.value.trim();
+    if (!text && attachments.length === 0) return;
+
+    const timeline = document.getElementById('timeline');
+    const imagesHTML = attachments.filter(a => a.type === 'image').map(a => `
+      <div class="note-image">
+        <span class="material-symbols-outlined">image</span>
+        <div class="img-label">${a.label.replace('.jpg', '')}</div>
+      </div>
+    `).join('');
+    const filesHTML = attachments.filter(a => a.type !== 'image').map(a => `
+      <a href="#" class="record-link" style="margin-right: 6px;">
+        <span class="material-symbols-outlined">description</span> ${a.label}
+      </a>
+    `).join('');
+
+    const newEvent = document.createElement('div');
+    newEvent.className = 'event';
+    newEvent.dataset.category = 'notes';
+    newEvent.innerHTML = `
+      <div class="event-marker"><span class="material-symbols-outlined">sticky_note_2</span></div>
+      <div class="event-row">
+        <div class="event-main">
+          <div class="event-title">
+            Field Note
+            <span class="actor-chip"><span class="material-symbols-outlined">person</span> You</span>
+          </div>
+          ${text ? `<div class="event-note">${text.replace(/</g, '&lt;')}</div>` : ''}
+          ${imagesHTML ? `<div class="note-images">${imagesHTML}</div>` : ''}
+          ${filesHTML ? `<div style="margin-top: 8px;">${filesHTML}</div>` : ''}
+        </div>
+        <span class="event-time">
+          <span class="material-symbols-outlined">schedule</span> Just now
+        </span>
+      </div>
+    `;
+    // insert right after the "Today" day header
+    const firstDayHead = timeline.querySelector('.day-head');
+    timeline.insertBefore(newEvent, firstDayHead.nextSibling);
+
+    input.value = '';
+    attachments = [];
+    renderAttachments();
+    toggleSubmit();
+  }
+</script>
+
+</body>
+</html>
